@@ -3,11 +3,11 @@
 This is our `SDC Fun` team repo for the capstone project in Udacity's Self-Driving Car Nanodegree 
 program.  Our team members are:
 
- * James Barfield
- * Nick Condo
- * Jay Deng
- * Nimish Sanghi
- * Colin Shaw
+ * James Barfield (jamesbarfield87@gmail.com)
+ * Nick Condo(nicholas.condo@gmail.com)
+ * Jay Deng (jaydengus@gmail.com)
+ * Nimish Sanghi (nimish.sanghi@gmail.com)
+ * Colin Shaw (colin.shaw@aya.yale.edu)
 
 
 
