@@ -3,8 +3,10 @@
 import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
+from std_msgs.msg import Int32
 
 import math
+
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -21,46 +23,59 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+
+LOOKAHEAD_WPS = 200 
 
 
 class WaypointUpdater(object):
+
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
+        rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-        # TODO: Add other member variables you need below
+        rate = rospy.Rate(10)
+        while not rospy.is_shutdown():
+            rate.sleep()
+            self.loop()
 
-        rospy.spin()
+
+    def loop(self):
+        if hasattr(self, 'waypoints'):
+            #rospy.logwarn('Here')
+            for x in self.waypoints.waypoints:
+                x.twist.twist.linear.x = 40.0
+            self.final_waypoints_pub.publish(self.waypoints)
+
 
     def pose_cb(self, msg):
-        # TODO: Implement
-        pass
+        self.pose = msg
 
-    def waypoints_cb(self, waypoints):
-        # TODO: Implement
-        pass
+
+    def waypoints_cb(self, msg):
+        self.waypoints = msg
+
 
     def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        self.traffic = msg
+
 
     def obstacle_cb(self, msg):
-        # TODO: Callback for /obstacle_waypoint message. We will implement it later
-        pass
+        self.obstacle = msg
+
 
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
+
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
+
 
     def distance(self, waypoints, wp1, wp2):
         dist = 0
