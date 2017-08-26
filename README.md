@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Udacity Capstone Project 
 
 This is our `SDC Fun` team repo for the capstone project in Udacity's Self-Driving Car Nanodegree 
