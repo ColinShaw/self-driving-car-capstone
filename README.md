@@ -32,4 +32,3 @@ which has a lot of information about environment, simulator, etc.
 
 ### Lessons learned and areas for improvement
 
-
