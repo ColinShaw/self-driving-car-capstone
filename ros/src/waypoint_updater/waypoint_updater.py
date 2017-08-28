@@ -2,7 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane, Waypoint
+from styx_msgs.msg import Lane, Waypoint, TrafficLightArray
 from std_msgs.msg import Int32
 
 import math
@@ -32,57 +32,56 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
-        rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.current_pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.base_waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_waypoint_cb)
+        rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_waypoint_cb)
+        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_lights_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
-            rate.sleep()
             self.loop()
+            rate.sleep()
 
 
     def loop(self):
-        if hasattr(self, 'waypoints'):
+        if hasattr(self, 'base_waypoints'):
             #rospy.logwarn('Here')
-            for x in self.waypoints.waypoints:
+            for x in self.base_waypoints.waypoints:
                 x.twist.twist.linear.x = 40.0
-            self.final_waypoints_pub.publish(self.waypoints)
+            self.final_waypoints_pub.publish(self.base_waypoints)
 
 
-    def pose_cb(self, msg):
-        self.pose = msg
+    def current_pose_cb(self, msg):
+        self.current_pose = msg
 
+    def base_waypoints_cb(self, msg):
+        self.base_waypoints = msg
 
-    def waypoints_cb(self, msg):
-        self.waypoints = msg
+    def traffic_waypoint_cb(self, msg):
+        self.traffic_waypoint = msg.data
 
+    def obstacle_waypoint_cb(self, msg):
+        self.obstacle_waypoints = msg.data
 
-    def traffic_cb(self, msg):
-        self.traffic = msg
-
-
-    def obstacle_cb(self, msg):
-        self.obstacle = msg
+    def traffic_lights_cb(self, msg):
+        self.traffic_light = msg
 
 
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
-
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
-
     def distance(self, waypoints, wp1, wp2):
         dist = 0
-        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+        dl   = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
         for i in range(wp1, wp2+1):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-            wp1 = i
+            wp1   = i
         return dist
 
 
