@@ -32,10 +32,10 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.current_pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.base_waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_waypoint_cb)
-        rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_waypoint_cb)
+        rospy.Subscriber('/current_pose',           PoseStamped,       self.current_pose_cb)
+        rospy.Subscriber('/base_waypoints',         Lane,              self.base_waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint',       Int32,             self.traffic_waypoint_cb)
+        rospy.Subscriber('/obstacle_waypoint',      Int32,             self.obstacle_waypoint_cb)
         rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_lights_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
@@ -47,11 +47,29 @@ class WaypointUpdater(object):
 
 
     def loop(self):
-        if hasattr(self, 'base_waypoints'):
-            #rospy.logwarn('Here')
-            for x in self.base_waypoints.waypoints:
-                x.twist.twist.linear.x = 40.0
-            self.final_waypoints_pub.publish(self.base_waypoints)
+        if hasattr(self, 'base_waypoints') and hasattr(self, 'current_pose'):
+            lane                 = Lane()
+            lane.header.stamp    = rospy.Time().now()
+            lane.header.frame_id = '/world'
+
+            p    = self.current_pose.pose.position
+            wpts = self.base_waypoints.waypoints
+
+            nearest_index    = None
+            nearest_distance = float('inf')
+
+            for i in range(len(wpts)):
+                q = wpts[i].pose.pose.position
+                d = math.sqrt((p.x-q.x)**2 + (p.y-q.y)**2 + (p.z-q.z)**2)
+                if d < nearest_distance:
+                    nearest_index    = i
+                    nearest_distance = d
+
+            for i in range(nearest_index, nearest_index + LOOKAHEAD_WPS):
+                index = i % len(wpts)
+                lane.waypoints.append(wpts[index])
+
+            self.final_waypoints_pub.publish(lane)
 
 
     def current_pose_cb(self, msg):
@@ -67,7 +85,7 @@ class WaypointUpdater(object):
 
 
     def obstacle_waypoint_cb(self, msg):
-        self.obstacle_waypoints = msg.data
+        self.obstacle_waypoint = msg.data
 
 
     def traffic_lights_cb(self, msg):
@@ -83,7 +101,7 @@ class WaypointUpdater(object):
 
 
     def distance(self, waypoints, wp1, wp2):
-        dist = 0
+        dist = 0.0
         dl   = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
         for i in range(wp1, wp2+1):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)

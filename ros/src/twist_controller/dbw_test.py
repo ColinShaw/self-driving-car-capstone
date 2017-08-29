@@ -27,11 +27,11 @@ class DBWTestNode(object):
 
         rospy.Subscriber('/vehicle/steering_cmd', SteeringCmd, self.steer_cb)
         rospy.Subscriber('/vehicle/throttle_cmd', ThrottleCmd, self.throttle_cb)
-        rospy.Subscriber('/vehicle/brake_cmd', BrakeCmd, self.brake_cb)
-        rospy.Subscriber('/actual/steering_cmd', SteeringCmd, self.actual_steer_cb)
-        rospy.Subscriber('/actual/throttle_cmd', ThrottleCmd, self.actual_throttle_cb)
-        rospy.Subscriber('/actual/brake_cmd', BrakeCmd, self.actual_brake_cb)
-        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
+        rospy.Subscriber('/vehicle/brake_cmd',    BrakeCmd,    self.brake_cb)
+        rospy.Subscriber('/actual/steering_cmd',  SteeringCmd, self.actual_steer_cb)
+        rospy.Subscriber('/actual/throttle_cmd',  ThrottleCmd, self.actual_throttle_cb)
+        rospy.Subscriber('/actual/brake_cmd',     BrakeCmd,    self.actual_brake_cb)
+        rospy.Subscriber('/vehicle/dbw_enabled',  Bool,        self.dbw_enabled_cb)
 
         self.steer    = None
         self.throttle = None
