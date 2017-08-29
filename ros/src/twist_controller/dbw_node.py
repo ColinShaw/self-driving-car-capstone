@@ -66,24 +66,16 @@ class DBWNode(object):
 
 
     def loop(self):
-            # TODO: Get predicted throttle, brake, and steering using `twist_controller`
-            # You should only publish the control commands if dbw is enabled
-            # throttle, brake, steering = self.controller.control(<proposed linear velocity>,
-            #                                                     <proposed angular velocity>,
-            #                                                     <current linear velocity>,
-            #                                                     <dbw status>,
-            #                                                     <any other argument you need>)
-
-            throttle, brake, steer = self.controller.control()
-            if self.dbw_enabled:
-                self.publish(throttle, brake, steer)
+        throttle, brake, steer = self.controller.control()
+        if self.dbw_enabled:
+            self.publish(throttle, brake, steer)
 
 
     def publish(self, throttle, brake, steer):
-        tcmd                = ThrottleCmd()
-        tcmd.enable         = True
-        tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
-        tcmd.pedal_cmd      = throttle
+        tcmd                          = ThrottleCmd()
+        tcmd.enable                   = True
+        tcmd.pedal_cmd_type           = ThrottleCmd.CMD_PERCENT
+        tcmd.pedal_cmd                = throttle
         self.throttle_pub.publish(tcmd)
 
         scmd                          = SteeringCmd()
@@ -91,15 +83,16 @@ class DBWNode(object):
         scmd.steering_wheel_angle_cmd = steer
         self.steer_pub.publish(scmd)
 
-        bcmd                = BrakeCmd()
-        bcmd.enable         = True
-        bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-        bcmd.pedal_cmd      = brake
+        bcmd                          = BrakeCmd()
+        bcmd.enable                   = True
+        bcmd.pedal_cmd_type           = BrakeCmd.CMD_TORQUE
+        bcmd.pedal_cmd                = brake
         self.brake_pub.publish(bcmd)
 
 
     def twist_cb(self, msg):
-        pass
+        self.twist = msg
+
 
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data

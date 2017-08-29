@@ -7,5 +7,7 @@ class Controller(object):
     def __init__(self, *args, **kwargs):
         pass
 
+
     def control(self, *args, **kwargs):
-        return 1., 0., 0.
+        return 1.0, 0.0, 0.0
+

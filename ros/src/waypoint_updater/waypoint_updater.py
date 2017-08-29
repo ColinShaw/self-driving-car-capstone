@@ -57,14 +57,18 @@ class WaypointUpdater(object):
     def current_pose_cb(self, msg):
         self.current_pose = msg
 
+
     def base_waypoints_cb(self, msg):
         self.base_waypoints = msg
+
 
     def traffic_waypoint_cb(self, msg):
         self.traffic_waypoint = msg.data
 
+
     def obstacle_waypoint_cb(self, msg):
         self.obstacle_waypoints = msg.data
+
 
     def traffic_lights_cb(self, msg):
         self.traffic_light = msg
@@ -73,8 +77,10 @@ class WaypointUpdater(object):
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
+
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
+
 
     def distance(self, waypoints, wp1, wp2):
         dist = 0

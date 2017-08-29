@@ -50,6 +50,7 @@ class DBWTestNode(object):
 
         self.loop()
 
+
     def loop(self):
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
@@ -72,17 +73,22 @@ class DBWTestNode(object):
             writer.writeheader()
             writer.writerows(self.brake_data)
 
+
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data
+
 
     def steer_cb(self, msg):
         self.steer = msg.steering_wheel_angle_cmd
 
+
     def throttle_cb(self, msg):
         self.throttle = msg.pedal_cmd
 
+
     def brake_cb(self, msg):
         self.brake = msg.pedal_cmd
+
 
     def actual_steer_cb(self, msg):
         if self.dbw_enabled and self.steer is not None:
@@ -90,11 +96,13 @@ class DBWTestNode(object):
                                     'proposed': self.steer})
             self.steer = None
 
+
     def actual_throttle_cb(self, msg):
         if self.dbw_enabled and self.throttle is not None:
             self.throttle_data.append({'actual':   msg.pedal_cmd,
                                        'proposed': self.throttle})
             self.throttle = None
+
 
     def actual_brake_cb(self, msg):
         if self.dbw_enabled and self.brake is not None:
