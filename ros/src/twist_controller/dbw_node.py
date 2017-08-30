@@ -24,12 +24,13 @@ class DBWNode(object):
         max_lat_accel   = rospy.get_param('~max_lat_accel',   3.0)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.0)
 
-        rospy.Subscriber('/twist_cmd',           TwistStamped, self.twist_cb)
+        rospy.Subscriber('/current_velocity',    TwistStamped, self.current_velocity_cb)
+        rospy.Subscriber('/twist_cmd',           TwistStamped, self.twist_cmd_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool,         self.dbw_enabled_cb)
 
-        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
         self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=1)
         self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=1)
+        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
 
         self.dbw_enabled = False
         self.controller  = Controller()
@@ -41,18 +42,12 @@ class DBWNode(object):
 
 
     def loop(self):
-        if hasattr(self, 'twist') and self.dbw_enabled:
-            l = self.twist.twist.linear
-            a = self.twist.twist.angular
+        if hasattr(self, 'twist_cmd') and hasattr(self, 'current_velocity') and self.dbw_enabled:
             params = {
-                'pos_x': l.x,
-                'pos_y': l.y,
-                'pos_z': l.z,
-                'ang_x': a.x,
-                'ang_y': a.y,
-                'ang_z': a.z
+                'twist_cmd':        self.twist_cmd,
+                'current_velocity': self.current_velocity
             }
-            throttle, brake, steer = self.controller.control()
+            throttle, brake, steer = self.controller.control(**params)
             self.publish(throttle, brake, steer)
 
 
@@ -75,8 +70,12 @@ class DBWNode(object):
         self.steer_pub.publish(s_cmd)
 
 
-    def twist_cb(self, msg):
-        self.twist = msg
+    def current_velocity_cb(self, msg):
+        self.current_velocity = msg
+
+
+    def twist_cmd_cb(self, msg):
+        self.twist_cmd = msg
 
 
     def dbw_enabled_cb(self, msg):

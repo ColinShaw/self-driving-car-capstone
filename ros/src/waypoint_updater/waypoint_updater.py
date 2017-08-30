@@ -15,10 +15,10 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose',           PoseStamped,       self.current_pose_cb)
-        rospy.Subscriber('/base_waypoints',         Lane,              self.base_waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint',       Int32,             self.traffic_waypoint_cb)
-        rospy.Subscriber('/obstacle_waypoint',      Int32,             self.obstacle_waypoint_cb)
+        rospy.Subscriber('/current_pose',      PoseStamped, self.current_pose_cb)
+        rospy.Subscriber('/base_waypoints',    Lane,        self.base_waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint',  Int32,       self.traffic_waypoint_cb)
+        rospy.Subscriber('/obstacle_waypoint', Int32,       self.obstacle_waypoint_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -40,6 +40,7 @@ class WaypointUpdater(object):
             nearest_index    = None
             nearest_distance = float('inf')
 
+            # Compute nearest waypoint
             for i in range(len(wpts)):
                 q = wpts[i].pose.pose.position
                 d = math.sqrt((p.x-q.x)**2 + (p.y-q.y)**2 + (p.z-q.z)**2)
@@ -47,9 +48,14 @@ class WaypointUpdater(object):
                     nearest_index    = i
                     nearest_distance = d
 
+            # Create forward list of waypoints 
             for i in range(nearest_index, nearest_index + LOOKAHEAD_WPS):
                 index = i % len(wpts)
                 lane.waypoints.append(wpts[index])
+
+            # Set velocity for waypoints
+            for i in range(len(lane.waypoints)):
+                lane.waypoints[i].twist.twist.linear.x = 10.0
 
             self.final_waypoints_pub.publish(lane)
 
