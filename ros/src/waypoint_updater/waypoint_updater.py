@@ -3,7 +3,7 @@
 import rospy
 import math
 from   geometry_msgs.msg import PoseStamped
-from   styx_msgs.msg     import Lane, Waypoint, TrafficLightArray
+from   styx_msgs.msg     import Lane, Waypoint
 from   std_msgs.msg      import Int32
 
 
@@ -19,7 +19,6 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints',         Lane,              self.base_waypoints_cb)
         rospy.Subscriber('/traffic_waypoint',       Int32,             self.traffic_waypoint_cb)
         rospy.Subscriber('/obstacle_waypoint',      Int32,             self.obstacle_waypoint_cb)
-        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_lights_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -69,10 +68,6 @@ class WaypointUpdater(object):
 
     def obstacle_waypoint_cb(self, msg):
         self.obstacle_waypoint = msg.data
-
-
-    def traffic_lights_cb(self, msg):
-        self.traffic_light = msg
 
 
     def get_waypoint_velocity(self, waypoint):
