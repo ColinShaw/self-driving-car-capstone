@@ -3,13 +3,11 @@
 import os
 import csv
 import math
-
-from geometry_msgs.msg import Quaternion
-
-from styx_msgs.msg import Lane, Waypoint
-
 import tf
 import rospy
+from   geometry_msgs.msg import Quaternion
+from   styx_msgs.msg     import Lane, Waypoint
+
 
 CSV_HEADER = ['x', 'y', 'z', 'yaw']
 MAX_DECEL = 1.0
@@ -51,7 +49,7 @@ class WaypointLoader(object):
                 p.pose.pose.position.z = float(wp['z'])
                 q = self.quaternion_from_yaw(float(wp['yaw']))
                 p.pose.pose.orientation = Quaternion(*q)
-                p.twist.twist.linear.x = float(self.velocity*0.27778)
+                p.twist.twist.linear.x  = float(self.velocity*0.27778)
 
                 waypoints.append(p)
         return self.decelerate(waypoints)

@@ -1,36 +1,11 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Bool
-from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
-from geometry_msgs.msg import TwistStamped
 import math
-
-from twist_controller import Controller
-
-
-'''
-You can build this node only after you have built (or partially built) the `waypoint_updater` node.
-
-You will subscribe to `/twist_cmd` message which provides the proposed linear and angular velocities.
-You can subscribe to any other message that you find important or refer to the document for list
-of messages subscribed to by the reference implementation of this node.
-
-One thing to keep in mind while building this node and the `twist_controller` class is the status
-of `dbw_enabled`. While in the simulator, its enabled all the time, in the real car, that will
-not be the case. This may cause your PID controller to accumulate error because the car could
-temporarily be driven by a human instead of your controller.
-
-We have provided two launch files with this node. Vehicle specific values (like vehicle_mass,
-wheel_base) etc should not be altered in these files.
-
-We have also provided some reference implementations for PID controller and other utility classes.
-You are free to use them or build your own.
-
-Once you have the proposed throttle, brake, and steer values, publish it on the various publishers
-that we have created in the `__init__` function.
-
-'''
+from   std_msgs.msg      import Bool
+from   dbw_mkz_msgs.msg  import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
+from   geometry_msgs.msg import TwistStamped
+from   twist_controller  import Controller
 
 
 class DBWNode(object):
@@ -59,35 +34,45 @@ class DBWNode(object):
         self.dbw_enabled = False
         self.controller  = Controller()
 
-        rate = rospy.Rate(50) 
+        rate = rospy.Rate(10) 
         while not rospy.is_shutdown():
             self.loop()
             rate.sleep()
 
 
     def loop(self):
-        throttle, brake, steer = self.controller.control()
-        if self.dbw_enabled:
+        if hasattr(self, 'twist') and self.dbw_enabled:
+            l = self.twist.twist.linear
+            a = self.twist.twist.angular
+            params = {
+                'pos_x': l.x,
+                'pos_y': l.y,
+                'pos_z': l.z,
+                'ang_x': a.x,
+                'ang_y': a.y,
+                'ang_z': a.z
+            }
+            throttle, brake, steer = self.controller.control()
             self.publish(throttle, brake, steer)
 
 
     def publish(self, throttle, brake, steer):
-        tcmd                          = ThrottleCmd()
-        tcmd.enable                   = True
-        tcmd.pedal_cmd_type           = ThrottleCmd.CMD_PERCENT
-        tcmd.pedal_cmd                = throttle
-        self.throttle_pub.publish(tcmd)
+        t_cmd                = ThrottleCmd()
+        t_cmd.enable         = True
+        t_cmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
+        t_cmd.pedal_cmd      = throttle
+        self.throttle_pub.publish(t_cmd)
 
-        scmd                          = SteeringCmd()
-        scmd.enable                   = True
-        scmd.steering_wheel_angle_cmd = steer
-        self.steer_pub.publish(scmd)
+        b_cmd                = BrakeCmd()
+        b_cmd.enable         = True
+        b_cmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
+        b_cmd.pedal_cmd      = brake
+        self.brake_pub.publish(b_cmd)
 
-        bcmd                          = BrakeCmd()
-        bcmd.enable                   = True
-        bcmd.pedal_cmd_type           = BrakeCmd.CMD_TORQUE
-        bcmd.pedal_cmd                = brake
-        self.brake_pub.publish(bcmd)
+        s_cmd                = SteeringCmd()
+        s_cmd.enable         = True
+        s_cmd.steering_wheel_angle_cmd = steer
+        self.steer_pub.publish(s_cmd)
 
 
     def twist_cb(self, msg):

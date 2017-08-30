@@ -1,27 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
-from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane, Waypoint, TrafficLightArray
-from std_msgs.msg import Int32
-
 import math
-
-
-'''
-This node will publish waypoints from the car's current position to some `x` distance ahead.
-
-As mentioned in the doc, you should ideally first implement a version which does not care
-about traffic lights or obstacles.
-
-Once you have created dbw_node, you will update this node to use the status of traffic lights too.
-
-Please note that our simulator also provides the exact location of traffic lights and their
-current status in `/vehicle/traffic_lights` message. You can use this message to build this node
-as well as to verify your TL classifier.
-
-TODO (for Yousuf and Aaron): Stopline location for each traffic light.
-'''
+from   geometry_msgs.msg import PoseStamped
+from   styx_msgs.msg     import Lane, Waypoint, TrafficLightArray
+from   std_msgs.msg      import Int32
 
 
 LOOKAHEAD_WPS = 200 
