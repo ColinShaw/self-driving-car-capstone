@@ -19,7 +19,7 @@ class TLClassifier(object):
         """
         #TODO implement light color prediction
 
-
+        # sensing some of the color values based on thresholding
         lower_range = np.array([200,0,0], dtype = "uint8")
         upper_range = np.array([255,100,100], dtype = "uint8")
         Red_sum = np.sum(cv2.inRange(image, lower_black, upper_range))
@@ -30,14 +30,14 @@ class TLClassifier(object):
         upper_range = np.array([255,255,100], dtype = "uint8")
         Yellow_sum = np.sum(cv2.inRange(image, lower_black, upper_range))
 
-        if (Red_sum < 500) and (Green_sum < 500) and (Yellow_sum < 500): # 500 is a threshold meaning probabbly not a light
+         # 500 is a threshold meaning probabbly not a light
+        if (Red_sum < 500) and (Green_sum < 500) and (Yellow_sum < 500):
             return TrafficLight.UNKNOWN
         elif (Red_sum > Green_sum):
             if (Red_sum > Yellow_sum):
                 return TrafficLight.RED
             else:
                 return TrafficLight.YELLOW
-
         elif (Yellow_sum > Green_sum):
             if (Yellow_sum > Red_sum):
                 return TrafficLight.YELLOW
