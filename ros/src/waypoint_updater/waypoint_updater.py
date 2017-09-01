@@ -54,6 +54,7 @@ class WaypointUpdater(object):
                 lane.waypoints.append(wpts[index])
 
             # Set velocity for waypoints
+            # Needs to bring car to stop and resume driving based on light
             for i in range(len(lane.waypoints)):
                 lane.waypoints[i].twist.twist.linear.x = 10.0
 
