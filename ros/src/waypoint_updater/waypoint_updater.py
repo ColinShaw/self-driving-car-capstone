@@ -4,10 +4,10 @@ import rospy
 import math
 from   geometry_msgs.msg import PoseStamped
 from   styx_msgs.msg     import Lane, Waypoint
-from   std_msgs.msg      import Int32
+from   std_msgs.msg      import Int32, Float32
 
 
-LOOKAHEAD_WPS = 200 
+LOOKAHEAD_WPS = 10
 
 
 class WaypointUpdater(object):
@@ -19,6 +19,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints',    Lane,        self.base_waypoints_cb)
         rospy.Subscriber('/traffic_waypoint',  Int32,       self.traffic_waypoint_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32,       self.obstacle_waypoint_cb)
+        rospy.Subscriber('/set_speed',         Float32,     self.set_speed_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -55,8 +56,11 @@ class WaypointUpdater(object):
 
             # Set velocity for waypoints
             # Needs to bring car to stop and resume driving based on light
+            speed = 0.0
+            if hasattr(self, 'set_speed'):
+                speed = self.set_speed
             for i in range(len(lane.waypoints)):
-                lane.waypoints[i].twist.twist.linear.x = 10.0
+                lane.waypoints[i].twist.twist.linear.x = speed
 
             self.final_waypoints_pub.publish(lane)
 
@@ -75,6 +79,10 @@ class WaypointUpdater(object):
 
     def obstacle_waypoint_cb(self, msg):
         self.obstacle_waypoint = msg.data
+
+
+    def set_speed_cb(self, msg):
+        self.set_speed = msg.data
 
 
     def get_waypoint_velocity(self, waypoint):
