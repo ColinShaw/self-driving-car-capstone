@@ -19,7 +19,10 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints',    Lane,        self.base_waypoints_cb)
         rospy.Subscriber('/traffic_waypoint',  Int32,       self.traffic_waypoint_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32,       self.obstacle_waypoint_cb)
-        rospy.Subscriber('/set_speed',         Float32,     self.set_speed_cb)
+
+        # For testing and manual topic control
+        rospy.Subscriber('/set_speed', Float32, self.set_speed_cb)
+        #rospy.Subscriber('/vehicle/traffic_lights', ???, self.set_traffif_lights_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 

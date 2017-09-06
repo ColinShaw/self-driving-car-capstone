@@ -12,9 +12,10 @@ class Controller(object):
         wheel_base          = rospy.get_param('~wheel_base',      2.8498)
         self.brake_deadband = rospy.get_param('~brake_deadband',  0.1)
 
-        self.last_time   = None
-        self.pid_control = PID(5.0, 0.1, 0.02)
-        self.yaw_control = YawController(wheel_base=wheel_base, 
+        self.last_time    = None
+        self.pid_control  = PID(5.0, 0.1, 0.02)
+        self.pid_steering = PID(5.0, 0.1, 0.02)
+        self.yaw_control  = YawController(wheel_base=wheel_base, 
                                          steer_ratio=steer_ratio,
                                          min_speed=0.0, 
                                          max_lat_accel=max_lat_accel,
@@ -37,6 +38,7 @@ class Controller(object):
 
         if dbw_enabled is False:
             self.pid_control.reset()
+            self.pid_steering.reset()
            
         if self.last_time is not None:
             time           = rospy.get_time()
@@ -49,9 +51,10 @@ class Controller(object):
 
             #rospy.logwarn('Error: ' + str(velocity_error) + ' Throttle: ' + str(throttle) + ' Brake: ' + str(brake))
 
-            steering = self.yaw_control.get_steering(desired_linear_velocity, 
-                                                     5.0 * desired_angular_velocity, 
-                                                     current_linear_velocity)
+            steer_control = self.yaw_control.get_steering(desired_linear_velocity, 
+                                                          desired_angular_velocity, 
+                                                          current_linear_velocity)
+            steering = self.pid_steering.update(steer_control, delta_t)
             return throttle, brake, steering
 
         else:
