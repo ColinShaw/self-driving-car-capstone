@@ -15,13 +15,13 @@ class Controller(object):
 
         self.last_time    = None
         self.pid_control  = PID(5.0, 0.1, 0.02)
-        self.pid_steering = PID(5.0, 0.1, 0.05)
-        self.lpf          = LowPassFilter(0.4, 0.1)
+        self.pid_steering = PID(5.0, 0.2, 0.02)
+        self.lpf          = LowPassFilter(0.5, 0.1)
         self.yaw_control  = YawController(wheel_base=wheel_base, 
-                                         steer_ratio=steer_ratio,
-                                         min_speed=0.0, 
-                                         max_lat_accel=max_lat_accel,
-                                         max_steer_angle=max_steer_angle)    
+                                          steer_ratio=steer_ratio,
+                                          min_speed=0.0, 
+                                          max_lat_accel=max_lat_accel,
+                                          max_steer_angle=max_steer_angle)    
 
 
     def control(self, **kwargs):
@@ -32,8 +32,6 @@ class Controller(object):
 
         cv_l = kwargs['current_velocity'].twist.linear
         cv_a = kwargs['current_velocity'].twist.angular
-
-        velocity_error = tc_l.x - cv_l.x
 
         desired_linear_velocity  = tc_l.x
         desired_angular_velocity = tc_a.z
@@ -46,15 +44,14 @@ class Controller(object):
             self.pid_steering.reset()
            
         if self.last_time is not None:
-            time           = rospy.get_time()
-            delta_t        = time - self.last_time
-            self.last_time = time
+            time             = rospy.get_time()
+            delta_t          = time - self.last_time
+            self.last_time   = time
 
-            control  = self.pid_control.update(velocity_error, delta_t)
-            throttle = max(0.0, control)
-            brake    = max(0.0, -control) + self.brake_deadband
-
-            #rospy.logwarn('Error: ' + str(velocity_error) + ' Throttle: ' + str(throttle) + ' Brake: ' + str(brake))
+            velocity_error   = desired_linear_velocity - current_linear_velocity
+            control          = self.pid_control.update(velocity_error, delta_t)
+            throttle         = max(0.0, control)
+            brake            = max(0.0, -control) + self.brake_deadband
 
             desired_steering = self.yaw_control.get_steering(desired_linear_velocity, 
                                                              desired_angular_velocity, 
@@ -64,9 +61,9 @@ class Controller(object):
                                                              current_angular_velocity,
                                                              current_linear_velocity)
 
-            steering_error = desired_steering - current_steering
-            steering       = self.pid_steering.update(steering_error, delta_t)
-            steering       = self.lpf.filter(steering)
+            steering_error   = desired_steering - current_steering
+            steering         = self.pid_steering.update(steering_error, delta_t)
+            steering         = self.lpf.filter(steering)
 
             return throttle, brake, steering
 
