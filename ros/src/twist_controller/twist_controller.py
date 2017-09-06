@@ -50,7 +50,7 @@ class Controller(object):
             #rospy.logwarn('Error: ' + str(velocity_error) + ' Throttle: ' + str(throttle) + ' Brake: ' + str(brake))
 
             steering = self.yaw_control.get_steering(desired_linear_velocity, 
-                                                     desired_angular_velocity, 
+                                                     5.0 * desired_angular_velocity, 
                                                      current_linear_velocity)
             return throttle, brake, steering
 
