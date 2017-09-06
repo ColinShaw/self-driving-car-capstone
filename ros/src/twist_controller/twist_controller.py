@@ -1,6 +1,7 @@
 import rospy
 from   yaw_controller import YawController
 from   pid            import PID
+from   lowpass        import LowPassFilter
 
 
 class Controller(object):
@@ -14,7 +15,8 @@ class Controller(object):
 
         self.last_time    = None
         self.pid_control  = PID(5.0, 0.1, 0.02)
-        self.pid_steering = PID(5.0, 0.1, 0.02)
+        self.pid_steering = PID(5.0, 0.1, 0.05)
+        self.lpf          = LowPassFilter(0.4, 0.1)
         self.yaw_control  = YawController(wheel_base=wheel_base, 
                                          steer_ratio=steer_ratio,
                                          min_speed=0.0, 
@@ -31,10 +33,13 @@ class Controller(object):
         cv_l = kwargs['current_velocity'].twist.linear
         cv_a = kwargs['current_velocity'].twist.angular
 
-        velocity_error           = tc_l.x - cv_l.x
+        velocity_error = tc_l.x - cv_l.x
+
         desired_linear_velocity  = tc_l.x
         desired_angular_velocity = tc_a.z
+
         current_linear_velocity  = cv_l.x
+        current_angular_velocity = cv_a.z
 
         if dbw_enabled is False:
             self.pid_control.reset()
@@ -51,10 +56,18 @@ class Controller(object):
 
             #rospy.logwarn('Error: ' + str(velocity_error) + ' Throttle: ' + str(throttle) + ' Brake: ' + str(brake))
 
-            steer_control = self.yaw_control.get_steering(desired_linear_velocity, 
-                                                          desired_angular_velocity, 
-                                                          current_linear_velocity)
-            steering = self.pid_steering.update(steer_control, delta_t)
+            desired_steering = self.yaw_control.get_steering(desired_linear_velocity, 
+                                                             desired_angular_velocity, 
+                                                             desired_linear_velocity)
+
+            current_steering = self.yaw_control.get_steering(current_linear_velocity,
+                                                             current_angular_velocity,
+                                                             current_linear_velocity)
+
+            steering_error = desired_steering - current_steering
+            steering       = self.pid_steering.update(steering_error, delta_t)
+            steering       = self.lpf.filter(steering)
+
             return throttle, brake, steering
 
         else:
