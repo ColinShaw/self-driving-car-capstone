@@ -9,9 +9,9 @@ class Controller(object):
     def __init__(self):
         max_lat_accel       = rospy.get_param('~max_lat_accel',   3.0)
         max_steer_angle     = rospy.get_param('~max_steer_angle', 8.0)        
-        steer_ratio         = rospy.get_param('~steer_ratio',     14.8)
-        wheel_base          = rospy.get_param('~wheel_base',      2.8498)
-        self.brake_deadband = rospy.get_param('~brake_deadband',  0.1)
+        steer_ratio         = rospy.get_param('~steer_ratio',     2.67)
+        wheel_base          = rospy.get_param('~wheel_base',      3.0)
+        self.brake_deadband = rospy.get_param('~brake_deadband',  0.2)
 
         self.last_time    = None
         self.pid_control  = PID(5.0, 0.1, 0.02)
@@ -37,8 +37,9 @@ class Controller(object):
         desired_angular_velocity = tc_a.z
 
         current_linear_velocity  = cv_l.x
-        current_angular_velocity = cv_a.z
-
+        current_angular_velocity = cv_a.z        
+   
+        
         if dbw_enabled is False:
             self.pid_control.reset()
             self.pid_steering.reset()
