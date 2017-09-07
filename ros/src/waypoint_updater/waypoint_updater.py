@@ -2,6 +2,7 @@
 
 import rospy
 import math
+import tf
 from   geometry_msgs.msg import PoseStamped
 from   styx_msgs.msg     import Lane, Waypoint
 from   std_msgs.msg      import Int32, Float32
@@ -22,7 +23,6 @@ class WaypointUpdater(object):
 
         # For testing and manual topic control
         rospy.Subscriber('/set_speed', Float32, self.set_speed_cb)
-        #rospy.Subscriber('/vehicle/traffic_lights', ???, self.set_traffif_lights_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -51,6 +51,20 @@ class WaypointUpdater(object):
                 if d < nearest_distance:
                     nearest_index    = i
                     nearest_distance = d
+
+            # Nimish's work...
+            heading = math.atan2((wpts[nearest_index].pose.pose.position.y-p.y),(wpts[nearest_index].pose.pose.position.y-p.x))
+            x = self.current_pose.pose.orientation.x
+            y = self.current_pose.pose.orientation.y
+            z = self.current_pose.pose.orientation.z
+            w = self.current_pose.pose.orientation.w
+            euler_angles_xyz = tf.transformations.euler_from_quaternion([x, y, z, w])
+            theta = euler_angles_xyz[-1]
+            angle = math.fabs(theta-heading)
+            if angle > math.pi/4:
+                nearest_index += 1
+
+            #rospy.logwarn('NI: ' + str(nearest_index))
 
             # Create forward list of waypoints 
             for i in range(nearest_index, nearest_index + LOOKAHEAD_WPS):
