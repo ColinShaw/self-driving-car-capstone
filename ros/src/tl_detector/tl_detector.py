@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import Int32
-from geometry_msgs.msg import PoseStamped, Pose
+from std_msgs.msg import Int32, Header
+from geometry_msgs.msg import PoseStamped, Pose, Quaternion
 from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
@@ -11,6 +11,7 @@ import tf
 import cv2
 from traffic_light_config import config
 import numpy as np
+import math
 
 
 STATE_COUNT_THRESHOLD = 3
@@ -103,8 +104,19 @@ class TLDetector(object):
 
         """
         #TODO implement
-        return 0
+        closest_dist = 10000.0 # arbitrary large number
+        closest_wp = 0
+        for i in range(len(self.waypoints.waypoints)):
+            x1 = pose.position.x
+            y1 = pose.position.y
+            x2 = self.waypoints.waypoints[i].pose.pose.position.x
+            y2 = self.waypoints.waypoints[i].pose.pose.position.y
+            dist = math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+            if dist < closest_dist:
+                closest_dist = dist
+                closest_wp = i
 
+        return closest_wp
 
     def project_to_image_plane(self, point_in_world):
         """Project point from 3D world coordinates to 2D camera image location
@@ -129,6 +141,7 @@ class TLDetector(object):
 
         # get transform between pose of camera and world frame
         trans = None
+        rot = None
         try:
             now = rospy.Time.now()
             self.listener.waitForTransform("/base_link",
@@ -141,9 +154,9 @@ class TLDetector(object):
 
         #TODO Use tranform and rotation to calculate 2D position of light in image
         # create an numpy array containing the 3D world point
-        object_point = np.array([[point_in_world[0], point_in_world[1], point_in_world[2]]])
+        object_point = np.array([[point_in_world.x, point_in_world.y, point_in_world.z]])
         # convert the quaternion returned from lookupTransform into euler rotation
-        (roll,pitch,yaw) = tf.transformation.euler_from_quaternion(rot)
+        (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(rot)
         rvec = np.array([roll,pitch,yaw])
         tvec = np.array(trans)
         # create the camera matrix from the focal lengths and principal point
@@ -152,9 +165,10 @@ class TLDetector(object):
         dist_coeffs = None
         # use OpenCv projectPoints to find the corresponding point in image from 3D world point
         img_point, _ = cv2.projectPoints(object_point, rvec, tvec, camera_matrix, dist_coeffs)
-
-        x = img_point[0]
-        y = img_point[1]
+        # cast to int to get a pixel value
+        pixels = np.int32(img_point).reshape(-1,2)
+        x = pixels[0][0]
+        y = pixels[0][1]
 
         return (x, y)
 
@@ -176,18 +190,72 @@ class TLDetector(object):
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         x, y = self.project_to_image_plane(light.pose.pose.position)
+        rospy.logwarn('x: {} y: {}'.format(x, y))
 
         #TODO use light location to zoom in on traffic light in image
 
         #Get classification
         return self.light_classifier.get_classification(cv_image)
 
+    def create_light(self, x, y, z, yaw, state):
+        """Creates a new TrafficLight object
+
+        Args:
+            x (float): x coordinate of light
+            y (float): y coordinate of light
+            z (float): z coordinate of light
+            yaw (float): angle of light around z axis
+            state (int): ID of traffic light color (specified in styx_msgs/TrafficLight)
+
+        Returns:
+            light (TrafficLight): new TrafficLight object
+
+        """
+        light = TrafficLight()
+
+        light.header = Header()
+        light.header.stamp = rospy.Time.now()
+        light.header.frame_id = 'world'
+
+        light.pose = self.create_pose(x, y, z, yaw)
+        light.state = state
+
+        return light
+
+    def create_pose(self, x, y, z, yaw=0.):
+        """Creates a new PoseStamped object - helper method for create_light
+
+        Args:
+            x (float): x coordinate of light
+            y (float): y coordinate of light
+            z (float): z coordinate of light
+            yaw (float): angle of light around z axis
+
+        Returns:
+            pose (PoseStamped): new PoseStamped object
+
+        """
+        pose = PoseStamped()
+
+        pose.header = Header()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = 'world'
+
+        pose.pose.position.x = x
+        pose.pose.position.y = y
+        pose.pose.position.z = z
+
+        q = tf.transformations.quaternion_from_euler(0., 0., math.pi*yaw/180.)
+        pose.pose.orientation = Quaternion(*q)
+
+        return pose
+
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
             location and color
 
         Returns:
-            int: index of waypoint closes to the upcoming traffic light (-1 if none exists)
+            int: index of waypoint closest to the upcoming traffic light (-1 if none exists)
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
@@ -195,13 +263,28 @@ class TLDetector(object):
         light_positions = self.config['light_positions']
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose)
+            #TODO find the closest visible traffic light (if one exists)
+            max_visible_light_dist = 200.0 # need to find optimal value for this
+            closest_light_dist = 10000.0 # arbitrary large number
+            for i, light_pos in enumerate(light_positions):
+                # check if the light is ahead of the car in x direction and within visible distance
+                dist = light_pos[0] - self.waypoints.waypoints[car_position].pose.pose.position.x
+                if dist > 0 and dist < closest_light_dist and dist < max_visible_light_dist:
+                    closest_light_dist = dist
+                    closest_light_idx = i
+                    # create light object - right now we are not provided with z coordinate of light
+                    # in config.light_positions but it is provided in /vehicle/traffic_lights and site config
+                    light = self.create_light(light_pos[0], light_pos[1], 2., 0., TrafficLight.UNKNOWN)
 
-        #TODO find the closest visible traffic light (if one exists)
-
+        #rospy.logwarn('self.waypoints.waypoints[car_position]: {}'.format(self.waypoints.waypoints[car_position]))
+        #rospy.logwarn('light: {}'.format(light))
         if light:
+            light_wp = self.get_closest_waypoint(light.pose.pose)
             state = self.get_light_state(light)
+            # use the ground truth state for testing
+            state = self.lights[closest_light_idx].state
             return light_wp, state
-        self.waypoints = None
+
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':
