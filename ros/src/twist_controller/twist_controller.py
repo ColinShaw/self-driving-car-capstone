@@ -1,6 +1,7 @@
 import rospy
 from   yaw_controller import YawController
 from   pid            import PID
+from   lowpass        import LowPassFilter
 
 
 class Controller(object):
@@ -12,16 +13,16 @@ class Controller(object):
         wheel_base          = rospy.get_param('~wheel_base',      3.0)
         self.brake_deadband = rospy.get_param('~brake_deadband',  0.2)
 
-        self.last_time   = None
+        self.last_time = None
+
         self.pid_control = PID(5.0, 0.1, 0.02)
         self.yaw_control = YawController(wheel_base=3.0, 
                                          steer_ratio=2.67,
                                          min_speed=0.0, 
                                          max_lat_accel=3.0,
                                          max_steer_angle=8.0)    
-
         self.yaw_pid_control = PID(5.0, 1.5, 0.15)
-        # self.yaw_pid_control = PID(5.0, 2.5, 0.10)
+        self.lpf = LowPassFilter(0.5, 0.1)
 
 
     def control(self, **kwargs):
@@ -33,9 +34,9 @@ class Controller(object):
         cv_l = kwargs['current_velocity'].twist.linear
         cv_a = kwargs['current_velocity'].twist.angular
 
-        velocity_error           = tc_l.x - cv_l.x
         desired_linear_velocity  = tc_l.x
         desired_angular_velocity = tc_a.z
+
         current_linear_velocity  = cv_l.x
         current_angular_velocity = cv_a.z        
    
@@ -49,6 +50,7 @@ class Controller(object):
             delta_t        = time - self.last_time
             self.last_time = time
 
+            velocity_error = desired_linear_velocity - current_linear_velocity
             control  = self.pid_control.update(velocity_error, delta_t)
             throttle = max(0.0, control)
             brake    = max(0.0, -control) + self.brake_deadband
@@ -61,11 +63,10 @@ class Controller(object):
                                                      current_angular_velocity, 
                                                      current_linear_velocity)
             
-            #TODO add low pass filter to desired_trajectory
-            
             steering_error = desired_steering - current_steering
+            steering = self.yaw_pid_control.update(steering_error, delta_t)
+            steering = self.lpf.filter(steering)
 
-            steering  = self.yaw_pid_control.update(steering_error, delta_t)
             rospy.logwarn('steering: ' + str(steering))
 
             return throttle, brake, steering
