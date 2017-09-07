@@ -2,9 +2,9 @@ from attrdict import AttrDict
 
 conf = AttrDict({
     'subscribers': [
-        {'topic':'/vehicle/steering_cmd', 'type': 'steer_cmd',    'name': 'steering'},
-        {'topic':'/vehicle/throttle_cmd', 'type': 'throttle_cmd', 'name': 'throttle'},
-        {'topic':'/vehicle/brake_cmd',    'type': 'brake_cmd',    'name': 'brake'}
+        {'topic':'/vehicle/steering_cmd',     'type': 'steer_cmd',     'name': 'steering'},
+        {'topic':'/vehicle/throttle_cmd',     'type': 'throttle_cmd',  'name': 'throttle'},
+        {'topic':'/vehicle/brake_cmd',        'type': 'brake_cmd',     'name': 'brake'}
     ],
     'publishers': [
         {'topic': '/current_pose',            'type': 'pose',          'name': 'current_pose'},
@@ -17,6 +17,6 @@ conf = AttrDict({
         {'topic': '/vehicle/lidar',           'type': 'pcl',           'name': 'lidar'},
         {'topic': '/vehicle/traffic_lights',  'type': 'trafficlights', 'name': 'trafficlights'},
         {'topic': '/vehicle/dbw_enabled',     'type': 'bool',          'name': 'dbw_status'},
-        {'topic': '/camera/image_raw',        'type': 'image',         'name': 'image'}
+        {'topic': '/image_color',             'type': 'image',         'name': 'image'},
     ]
 })
