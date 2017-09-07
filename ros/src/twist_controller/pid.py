@@ -1,5 +1,6 @@
 MIN_NUM = float('-inf')
 MAX_NUM = float('inf')
+# import rospy
 
 class PID(object):
 
@@ -28,6 +29,10 @@ class PID(object):
 
         y                 = self.kp * error + self.ki * self.int_val + self.kd * derivative;
         val               = max(self.min, min(y, self.max))
+        # rospy.logwarn('++++++++++++++++++++++++++++++++++++++++++=')
+        # rospy.logwarn('proport : '+str(self.kp * error))
+        # rospy.logwarn('differen: '+str(self.kd * derivative))
+        # rospy.logwarn('integral: '+str(self.ki * self.int_val))
 
         if val > self.max:
             val = self.max
