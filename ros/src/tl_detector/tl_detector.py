@@ -9,7 +9,9 @@ from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
-import yaml
+from traffic_light_config import config
+import numpy as np
+
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -121,6 +123,10 @@ class TLDetector(object):
         image_width = self.config['camera_info']['image_width']
         image_height = self.config['camera_info']['image_height']
 
+        # get principal point (center of image)
+        cx = image_width / 2
+        cy = image_height / 2
+
         # get transform between pose of camera and world frame
         trans = None
         try:
@@ -134,9 +140,21 @@ class TLDetector(object):
             rospy.logerr("Failed to find camera to map transform")
 
         #TODO Use tranform and rotation to calculate 2D position of light in image
+        # create an numpy array containing the 3D world point
+        object_point = np.array([[point_in_world[0], point_in_world[1], point_in_world[2]]])
+        # convert the quaternion returned from lookupTransform into euler rotation
+        (roll,pitch,yaw) = tf.transformation.euler_from_quaternion(rot)
+        rvec = np.array([roll,pitch,yaw])
+        tvec = np.array(trans)
+        # create the camera matrix from the focal lengths and principal point
+        camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
+        # distortion coefficients - currently not available but per slack will be published soon
+        dist_coeffs = None
+        # use OpenCv projectPoints to find the corresponding point in image from 3D world point
+        img_point, _ = cv2.projectPoints(object_point, rvec, tvec, camera_matrix, dist_coeffs)
 
-        x = 0
-        y = 0
+        x = img_point[0]
+        y = img_point[1]
 
         return (x, y)
 
