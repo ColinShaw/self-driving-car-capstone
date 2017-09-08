@@ -1,11 +1,14 @@
 from styx_msgs.msg import TrafficLight
 import numpy as np
 import cv2
+import keras
+from keras.models import load_model
+
 
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
-        pass
+        self.model = load_model('../../../data_science/models/udacity_vgg_fine_tuning.h5')
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -19,29 +22,18 @@ class TLClassifier(object):
         """
         #TODO implement light color prediction
 
-        # sensing some of the color values based on thresholding
-        lower_range = np.array([200,0,0], dtype = "uint8")
-        upper_range = np.array([255,100,100], dtype = "uint8")
-        Red_sum = np.sum(cv2.inRange(image, lower_range, upper_range))
-        lower_range = np.array([0,170,0], dtype = "uint8")
-        upper_range = np.array([150,255,150], dtype = "uint8")
-        Green_sum = np.sum(cv2.inRange(image, lower_range, upper_range))
-        lower_range = np.array([200,200,0], dtype = "uint8")
-        upper_range = np.array([255,255,100], dtype = "uint8")
-        Yellow_sum = np.sum(cv2.inRange(image, lower_range, upper_range))
+        img = cv2.resize(image, (224,224), interpolation=cv2.INER_AREA)
+        img = np.array(img, np.float32) / 255.
 
-         # 500 is a threshold meaning probabbly not a light
-        if (Red_sum < 500) and (Green_sum < 500) and (Yellow_sum < 500):
-            return TrafficLight.UNKNOWN
-        elif (Red_sum > Green_sum):
-            if (Red_sum > Yellow_sum):
-                return TrafficLight.RED
-            else:
-                return TrafficLight.YELLOW
-        elif (Yellow_sum > Green_sum):
-            if (Yellow_sum > Red_sum):
-                return TrafficLight.YELLOW
-            else:
-                return TrafficLight.RED
+        pred = self.model.predict(img, batch_size=1)
+        # Find class based on prediction index (need to confirm labels are correct order)
+        if pred == 0:
+            state = TrafficLight.GREEN
+        elif pred == 1:
+            state = TrafficLight.UNKNOWN # index 1 corresponds to no light
+        elif pred == 2:
+            state = TrafficLight.RED
         else:
-            return TrafficLight.GREEN
+            state = TrafficLight.YELLOW
+
+        return state

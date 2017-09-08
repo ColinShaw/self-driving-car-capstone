@@ -9,7 +9,7 @@ from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
-from traffic_light_config import config
+import yaml
 import numpy as np
 import math
 
@@ -261,10 +261,10 @@ class TLDetector(object):
         """
         light = None
         light_positions = self.config['light_positions']
-        if(self.pose):
+        if(self.waypoints):
             car_position = self.get_closest_waypoint(self.pose.pose)
             #TODO find the closest visible traffic light (if one exists)
-            max_visible_light_dist = 200.0 # need to find optimal value for this
+            max_visible_light_dist = 50.0 # need to find optimal value for this
             closest_light_dist = 10000.0 # arbitrary large number
             for i, light_pos in enumerate(light_positions):
                 # check if the light is ahead of the car in x direction and within visible distance
@@ -282,7 +282,7 @@ class TLDetector(object):
             light_wp = self.get_closest_waypoint(light.pose.pose)
             state = self.get_light_state(light)
             # use the ground truth state for testing
-            state = self.lights[closest_light_idx].state
+            #state = self.lights[closest_light_idx].state
             return light_wp, state
 
         return -1, TrafficLight.UNKNOWN
