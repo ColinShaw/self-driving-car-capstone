@@ -17,14 +17,14 @@ class Controller(object):
         self.last_time    = None
 
         self.pid_control  = PID(5.0, 0.1, 0.02)
-        self.pid_steering = PID(5.0, 0.0, 0.0)
+        self.pid_steering = PID(15.0, 1.2, 0.1)
 
         rospy.Subscriber('/kp', Float32, self.kp_cb)
         rospy.Subscriber('/ki', Float32, self.ki_cb)
         rospy.Subscriber('/kd', Float32, self.kd_cb)
 
-        self.lpf_pre      = LowPassFilter(1.0, 0.1)
-        self.lpf_post     = LowPassFilter(0.5, 0.1)
+        self.lpf_pre      = LowPassFilter(0.2, 0.1)
+        self.lpf_post     = LowPassFilter(0.4, 0.1)
 
         self.yaw_control  = YawController(wheel_base=wheel_base, 
                                           steer_ratio=steer_ratio,
@@ -72,12 +72,12 @@ class Controller(object):
                                                              current_linear_velocity)
 
             steering_error   = desired_steering - current_steering
-            #steering_error   = self.lpf_pre.filter(steering_error)
+            steering_error   = self.lpf_pre.filter(steering_error)
 
             #rospy.logwarn('Steering error: ' + str(steering_error))
 
             steering         = self.pid_steering.update(steering_error, delta_t)
-            #steering         = self.lpf_post.filter(steering)
+            steering         = self.lpf_post.filter(steering)
 
             rospy.logwarn('des: ' + str(desired_linear_velocity) + '   cur: ' + str(current_linear_velocity) + '   str: ' + str(steering))
    

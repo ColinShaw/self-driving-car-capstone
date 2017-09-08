@@ -8,7 +8,7 @@ from   styx_msgs.msg     import Lane, Waypoint
 from   std_msgs.msg      import Int32, Float32
 
 
-LOOKAHEAD_WPS = 500
+LOOKAHEAD_WPS = 800
 
 
 class WaypointUpdater(object):
