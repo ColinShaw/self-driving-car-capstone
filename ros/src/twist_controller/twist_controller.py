@@ -25,6 +25,7 @@ class Controller(object):
 
         self.lpf_pre      = LowPassFilter(1.0, 0.1)
         self.lpf_post     = LowPassFilter(0.5, 0.1)
+
         self.yaw_control  = YawController(wheel_base=wheel_base, 
                                           steer_ratio=steer_ratio,
                                           min_speed=0.0, 
