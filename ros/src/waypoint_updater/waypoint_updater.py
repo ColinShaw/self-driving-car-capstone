@@ -52,8 +52,10 @@ class WaypointUpdater(object):
                     nearest_index    = i
                     nearest_distance = d
 
-            # Nimish's work...
-            heading = math.atan2((wpts[nearest_index].pose.pose.position.y-p.y),(wpts[nearest_index].pose.pose.position.y-p.x))
+            # Ensure heading
+            delta_py = wpts[nearest_index].pose.pose.position.y - p.y
+            delta_px = wpts[nearest_index].pose.pose.position.y - p.x
+            heading  = math.atan2(delta_py, delta_px)
             x = self.current_pose.pose.orientation.x
             y = self.current_pose.pose.orientation.y
             z = self.current_pose.pose.orientation.z
@@ -64,15 +66,12 @@ class WaypointUpdater(object):
             if angle > math.pi/4:
                 nearest_index += 1
 
-            #rospy.logwarn('NI: ' + str(nearest_index))
-
             # Create forward list of waypoints 
             for i in range(nearest_index, nearest_index + LOOKAHEAD_WPS):
                 index = i % len(wpts)
                 lane.waypoints.append(wpts[index])
 
-            # Set velocity for waypoints
-            # Needs to bring car to stop and resume driving based on light
+            # TODO Selectively change the waypoint linear twist velocity based on traffic waypoint
             speed = 0.0
             if hasattr(self, 'set_speed'):
                 speed = self.set_speed
