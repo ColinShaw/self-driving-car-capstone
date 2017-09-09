@@ -282,7 +282,7 @@ class TLDetector(object):
             light_wp = self.get_closest_waypoint(light.pose.pose)
             state = self.get_light_state(light)
             # use the ground truth state for testing
-            #state = self.lights[closest_light_idx].state
+            state = self.lights[closest_light_idx].state
             return light_wp, state
 
         return -1, TrafficLight.UNKNOWN
