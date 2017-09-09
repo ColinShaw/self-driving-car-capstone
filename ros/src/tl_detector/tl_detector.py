@@ -190,7 +190,7 @@ class TLDetector(object):
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         x, y = self.project_to_image_plane(light.pose.pose.position)
-        rospy.logwarn('x: {} y: {}'.format(x, y))
+        #rospy.logwarn('x: {} y: {}'.format(x, y))
 
         #TODO use light location to zoom in on traffic light in image
 
@@ -261,7 +261,7 @@ class TLDetector(object):
         """
         light = None
         light_positions = self.config['light_positions']
-        if(self.waypoints):
+        if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose)
             #TODO find the closest visible traffic light (if one exists)
             max_visible_light_dist = 50.0 # need to find optimal value for this
