@@ -53,14 +53,14 @@ class Controller(object):
             self.pid_steering.reset()
            
         if self.last_time is not None:
-            time             = rospy.get_time()
-            delta_t          = time - self.last_time
-            self.last_time   = time
+            time           = rospy.get_time()
+            delta_t        = time - self.last_time
+            self.last_time = time
 
-            velocity_error   = desired_linear_velocity - current_linear_velocity
-            control          = self.pid_control.update(velocity_error, delta_t)
-            throttle         = max(0.0, control)
-            brake            = max(0.0, -control) + self.brake_deadband
+            velocity_error = desired_linear_velocity - current_linear_velocity
+            control        = self.pid_control.update(velocity_error, delta_t)
+            throttle       = max(0.0, control)
+            brake          = max(0.0, -control) + self.brake_deadband
 
             desired_steering = self.yaw_control.get_steering(desired_linear_velocity, 
                                                              desired_angular_velocity, 
@@ -70,11 +70,11 @@ class Controller(object):
                                                              current_angular_velocity,
                                                              current_linear_velocity)
 
-            steering_error   = desired_steering - current_steering
-            steering_error   = self.lpf_pre.filter(steering_error)
+            steering_error = desired_steering - current_steering
+            steering_error = self.lpf_pre.filter(steering_error)
 
-            steering         = self.pid_steering.update(steering_error, delta_t)
-            steering         = self.lpf_post.filter(steering)
+            steering = self.pid_steering.update(steering_error, delta_t)
+            steering = self.lpf_post.filter(steering)
 
             return throttle, brake, steering
 
