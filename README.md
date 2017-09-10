@@ -5,7 +5,7 @@ program.  Our team members are:
 
  * James Barfield (jamesbarfield87@gmail.com)
  * Nick Condo(nicholas.condo@gmail.com)
- * Jim Duan (jim.duan@gmail.com)
+ * Jim Duan (jd@vehicular.ai)
  * Nimish Sanghi (nimish.sanghi@gmail.com)
  * Colin Shaw (colin.shaw@aya.yale.edu)
 
