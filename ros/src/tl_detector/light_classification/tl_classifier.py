@@ -4,13 +4,14 @@ import numpy as np
 import cv2
 import keras
 from keras.models import load_model
+from keras.applications.vgg16 import preprocess_input
 import tensorflow as tf
 
 
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
-        self.model = load_model('../../../data_science/models/udacity_vgg_fine_tuning.h5')
+        self.model = load_model('../../../data_science/models/udacity_vgg_fine_tuning_combined.h5')
         self.graph = tf.get_default_graph()
 
     def get_classification(self, image):
@@ -25,18 +26,19 @@ class TLClassifier(object):
         """
         #TODO implement light color prediction
 
-        img = cv2.resize(image, (224,224), interpolation=cv2.INTER_AREA)
-        img = np.array(img, np.float32) / 255.
+        img = cv2.resize(image, (224,224), interpolation=cv2.INTER_NEAREST)
         img = np.expand_dims(img, axis=0)
+        img = img.astype('float64')
+        img = preprocess_input(img)
 
         # Hack found for keras issue https://github.com/fchollet/keras/issues/2397
         with self.graph.as_default():
-            pred = self.model.predict(img, batch_size=1)
+            pred = self.model.predict(img)
 
         # Get the index with max value that corresponds to the predicted state
-        rospy.logwarn('pred: {}'.format(pred))
+        #rospy.logwarn('pred: {}'.format(pred))
         pred = np.argmax(pred)
-        #rospy.logwarn('argmax: {}'.format(pred))
+        rospy.logwarn('argmax: {}'.format(pred))
 
         # Find class based on prediction index (need to confirm labels are correct order)
         if pred == 0:
