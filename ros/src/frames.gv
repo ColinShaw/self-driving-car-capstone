@@ -1,0 +1,7 @@
+digraph G {
+"world" -> "base_link"[label="Broadcaster: /styx_server\nAverage rate: 50.784 Hz\nMost recent transform: 1504560972.970 ( 0.040 sec old)\nBuffer length: 4.903 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1504560973.009"[ shape=plaintext ] ;
+ }->"world";
+}
