@@ -18,11 +18,27 @@ which has a lot of information about environment, simulator, etc.
 
 
 
-### Building the project
+### Building and running the project
+
+First, the python dependencies for the project need to be met.  This can be done
+from the root of the project by `pip install -r requirements.txt`.  Next go into
+the `/ros` directory and run `catkin_make`.  Be sure to source the project by 
+running `. devel/setup.sh`.  At this point, if your environment is set up properly, 
+you should be able to launch ROS with `roslaunch launch/styx.launch`.
 
 
 
-### How our team solved the problems
+### Traffic light detection
+
+
+
+### Motion control
+
+
+
+
+
+### Traffic light and motion control integration
 
 
 
