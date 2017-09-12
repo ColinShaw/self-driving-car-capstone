@@ -111,6 +111,33 @@ highway speeds.
 
 ### How we managed work in our team
 
+One important aspect of working on a team to complete this project was
+defining a good schedule with milestones for completion.  We wanted to
+have an MVP ready to turn in by September 18, two full weeks prior to 
+the project deadline, so that if there were any problems, unmet
+requirements or new ideas there would be plenty of time to accommodate
+so that we would be able to have our code run on the actual car.  When
+we intitially formed the team we decided this accelerated schedule was 
+desirable since we all wanted to achieve this shared goal.
+
+In terms of work division, this project has two main components, training 
+a model to identify the waypoint associated with the nearest red light 
+in the direction of travel of the car, and waypoint management and motion 
+control.  These tasks can be divided into a sequence of two asynchronous 
+tasks followed by integration and testing. 
+
+The members of our team selected what aspect to work on initially based
+on personal preference, knowing that as the project evolved we would all
+be involved in a wider view of it.  James and Nick predominantly worked 
+on the model for the traffic light detector while Colin and Nimish 
+predominantly worked on the motion control.  By the weekend of September 9
+we were able to start working on integration to meet our MVP milestone.
+
+Our team predominately used Slack to facilitate communications, augmented
+by e-mail correspondence and a few video conference calls used to meet each
+other and check in on progress during the integration phase.  We opted to 
+use a single GitHub repo with privileges granted all team members.  
+
 
 
 ### Lessons learned and areas for improvement
