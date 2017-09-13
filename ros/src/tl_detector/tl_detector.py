@@ -93,7 +93,22 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
-    def get_closest_waypoint(self, pose):
+    def distance(self, x1, y1, x2, y2):
+        """Calculates the distance between two points
+
+        Args:
+            x1 (double): x coordinate of first point
+            y1 (double): y coordinate of first point
+            x2 (double): x coordinate of second point
+            y2 (double): y coordinate of second point
+
+        Returns:
+            double: Euclidian distance between two points
+
+        """
+        return math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+
+    def get_closest_waypoint(self, pose, waypoints):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
@@ -103,18 +118,36 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        #TODO implement
         closest_dist = 10000.0 # arbitrary large number
         closest_wp = 0
-        for i in range(len(self.waypoints.waypoints)):
-            x1 = pose.position.x
-            y1 = pose.position.y
-            x2 = self.waypoints.waypoints[i].pose.pose.position.x
-            y2 = self.waypoints.waypoints[i].pose.pose.position.y
-            dist = math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+        for i in range(len(waypoints)):
+            dist = self.distance(pose.position.x, pose.position.y,
+                                 waypoints[i].pose.pose.position.x,
+                                 waypoints[i].pose.pose.position.y)
             if dist < closest_dist:
                 closest_dist = dist
                 closest_wp = i
+
+        return closest_wp
+
+    def get_next_waypoint(self, pose, waypoints):
+        """Identifies the closest path waypoint that's ahead of the given position
+
+        Args:
+            pose (Pose): position to match a waypoint to
+
+        Returns:
+            int: index of the next waypoint in self.waypoints
+
+        """
+        closest_wp = self.get_closest_waypoint(pose, waypoints)
+        wp_x = waypoints[closest_wp].pose.pose.position.x
+        wp_y = waypoints[closest_wp].pose.pose.position.y
+        heading = math.atan2( (wp_y-pose.position.y), (wp_x-pose.position.x) )
+        angle = abs(pose.position.z-heading)
+
+        if angle > math.pi/4:
+            closest_wp += 1
 
         return closest_wp
 
@@ -152,7 +185,8 @@ class TLDetector(object):
         except (tf.Exception, tf.LookupException, tf.ConnectivityException):
             rospy.logerr("Failed to find camera to map transform")
 
-        #TODO Use tranform and rotation to calculate 2D position of light in image
+        # Use tranform and rotation to calculate 2D position of light in image
+
         # create an numpy array containing the 3D world point
         object_point = np.array([[point_in_world.x, point_in_world.y, point_in_world.z]])
         # convert the quaternion returned from lookupTransform into euler rotation
@@ -189,8 +223,7 @@ class TLDetector(object):
         self.camera_image.encoding = "rgb8"
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        x, y = self.project_to_image_plane(light.pose.pose.position)
-        #rospy.logwarn('x: {} y: {}'.format(x, y))
+        # x, y = self.project_to_image_plane(light.pose.pose.position)
 
         #TODO use light location to zoom in on traffic light in image
 
@@ -261,31 +294,29 @@ class TLDetector(object):
         """
         light = None
         light_positions = self.config['light_positions']
+        light_waypoints = []
+        max_visible_dist = 50.0 # need to find optimal value
+        min_dist = 10000.0
         if(self.pose):
-            car_position = self.get_closest_waypoint(self.pose.pose)
-            #TODO find the closest visible traffic light (if one exists)
-            max_visible_light_dist = 50.0 # need to find optimal value for this
-            closest_light_dist = 10000.0 # arbitrary large number
-            for i, light_pos in enumerate(light_positions):
-                # check if the light is ahead of the car in x direction and within visible distance
-                dist = light_pos[0] - self.waypoints.waypoints[car_position].pose.pose.position.x
-                if dist > 0 and dist < closest_light_dist and dist < max_visible_light_dist:
-                    closest_light_dist = dist
-                    closest_light_idx = i
-                    # create light object - right now we are not provided with z coordinate of light
-                    # in config.light_positions but it is provided in /vehicle/traffic_lights and site config
-                    light = self.create_light(light_pos[0], light_pos[1], 2., 0., TrafficLight.UNKNOWN)
+            car_position = self.get_closest_waypoint(self.pose.pose, self.waypoints.waypoints)
+            # Find the closest visible traffic light (if one exists)
+            for light_pos in light_positions:
+                light_tmp = self.create_light(light_pos[0], light_pos[1], 0., 0., TrafficLight.UNKNOWN)
+                light_position = self.get_closest_waypoint(light_tmp.pose.pose, self.waypoints.waypoints)
+                dist = self.distance(self.waypoints.waypoints[car_position].pose.pose.position.x,
+                                     self.waypoints.waypoints[car_position].pose.pose.position.y,
+                                     self.waypoints.waypoints[light_position].pose.pose.position.x,
+                                     self.waypoints.waypoints[light_position].pose.pose.position.y)
+                if dist < min_dist and dist < max_visible_dist and car_position < light_position:
+                    light = light_tmp
+                    light_wp = light_position
 
-        #rospy.logwarn('self.waypoints.waypoints[car_position]: {}'.format(self.waypoints.waypoints[car_position]))
-        #rospy.logwarn('light: {}'.format(light))
         if light:
-            light_wp = self.get_closest_waypoint(light.pose.pose)
             state = self.get_light_state(light)
-            # use the ground truth state for testing
-            #state = self.lights[closest_light_idx].state
             return light_wp, state
 
         return -1, TrafficLight.UNKNOWN
+
 
 if __name__ == '__main__':
     try:
