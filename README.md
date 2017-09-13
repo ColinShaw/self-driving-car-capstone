@@ -54,12 +54,11 @@ the waypoints starting with the first waypoint in front of the car, with a twist
 linear velocity set in the axis of travel.  Second, the traffic light control 
 is performed, which is the topic of the next section.
 
-We first identify which waypoint index is nearest in front of the car while 
-ensuring the heading.  Next, depending on the control from the traffic light, we
-generate a velocity profile for waypoints in front of the car.  These are 
-combined in a `Lane` topic and published.  We added a new topic that is intended 
-to be invoked from the console using `rostopic pub ...` so that the speed 
-setpoint can be adjusted at whim.  
+We first identify which waypoint index is nearest in front of the car.  Next, 
+depending on the control from the traffic light, we generate a velocity profile 
+for waypoints in front of the car.  These are combined in a `Lane` topic 
+and published.  We added a new topic that is intended to be invoked from the 
+console using `rostopic pub ...` so that the speed setpoint can be adjusted at whim.  
 
 The waypoint follower implements what is known as the `pure pursuit` algorithm
 (see [here](docs/Coulter.pdf) for more on that), which returns a `TwistStamped`
@@ -81,10 +80,11 @@ controller that has a split output for the throttle and brake.  This also allows
 slightly higher impetus to the brake, as we want the car to be able to stop
 more quickly in some cases than we generally would want for acceleration.  It 
 also makes it simple to accommodate the brake deadband.  The PID controller was
-tuned manually, including a small integral component that helps with 
-acceleration.  It was noticed that the integral history is harmful to
-the stopping dynamics, so when the stopping action is started, the integral 
-history is reset (also done if the `dbw_enable` topic is disabled).  
+tuned manually (see [here](docs/BasilioMatos.pdf) and 
+[here](docs/ZieglerNichols.pdf) for more on tuning), including a small integral 
+component that helps with acceleration.  It was noticed that the integral history 
+is harmful to the stopping dynamics, so when the stopping action is started, the 
+integral history is reset (also done if the `dbw_enable` topic is disabled).  
 
 The steering control is more complex.  We compute a desired steering and current 
 steering estimate using an instance of the `YawController` class with our 
@@ -96,12 +96,7 @@ higher curvature sections of road better.  The PID controller is followed by
 a second low pass filter having greater effect, which smooths the resulting 
 steering command sent to the car.  The specific constants for the two low pass 
 filters were manually selected to have the best smoothing effect while not 
-interfering with the ability to steer on the sharpest turns.  We created 
-subscribers to new topics for the steering PID coefficients so that these 
-could be dynamically adjusted from a console using the `rostopic pub ...` 
-mechanism.  This allowed us to more easily tune the coefficients.  This was 
-critical in tuning the coefficients such that the car would operate at 
-highway speeds.
+interfering with the ability to steer on the sharpest turns.  
 
 
 
