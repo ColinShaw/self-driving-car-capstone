@@ -1,25 +1,21 @@
+import rospy
+import tf
+import math
+import base64
+import numpy as np
+import sensor_msgs.point_cloud2 as pcl2
+from   geometry_msgs.msg import PoseStamped, Quaternion, TwistStamped
+from   dbw_mkz_msgs.msg  import SteeringReport, ThrottleCmd, BrakeCmd, SteeringCmd
+from   std_msgs.msg      import Header, Bool, Float32 as Float
+from   styx_msgs.msg     import TrafficLight, TrafficLightArray
+from   sensor_msgs.msg   import Image, PointCloud2
+from   cv_bridge         import CvBridge, CvBridgeError
+from   PIL               import Image as PIL_Image
+from   io                import BytesIO
+
+
 ONE_MPH = 0.44704
 
-import rospy
-
-import tf
-from geometry_msgs.msg import PoseStamped, Quaternion, TwistStamped
-from dbw_mkz_msgs.msg import SteeringReport, ThrottleCmd, BrakeCmd, SteeringCmd
-from std_msgs.msg import Float32 as Float
-from std_msgs.msg import Bool
-from sensor_msgs.msg import PointCloud2
-from sensor_msgs.msg import Image
-import sensor_msgs.point_cloud2 as pcl2
-from std_msgs.msg import Header
-from cv_bridge import CvBridge, CvBridgeError
-
-from styx_msgs.msg import TrafficLight, TrafficLightArray
-import numpy as np
-from PIL import Image as PIL_Image
-from io import BytesIO
-import base64
-
-import math
 
 TYPE = {
     'bool':          Bool,
@@ -38,11 +34,11 @@ TYPE = {
 
 class Bridge(object):
 
-    def __init__(self, conf):
+    def __init__(self, conf, server):
         rospy.init_node('styx_server')
-
+        self.server      = server
         self.vel         = 0.0
-        self.yaw         = None 
+        self.yaw         = None
         self.angular_vel = 0.0
         self.bridge      = CvBridge()
 
@@ -54,10 +50,6 @@ class Bridge(object):
 
         self.subscribers = [rospy.Subscriber(e.topic, TYPE[e.type], self.callbacks[e.topic]) for e in conf.subscribers]
         self.publishers  = {e.name: rospy.Publisher(e.topic, TYPE[e.type], queue_size=1) for e in conf.publishers}
-
-
-    def register_server(self, server):
-        self.server = server
 
 
     def create_light(self, x, y, z, yaw, state):

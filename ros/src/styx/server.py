@@ -9,10 +9,9 @@ from   bridge import Bridge
 from   conf   import conf
 
 
-sio    = socketio.Server()
-app    = Flask(__name__)
-bridge = Bridge(conf)
-msgs   = []
+sio  = socketio.Server()
+app  = Flask(__name__)
+msgs = []
 
 dbw_enable = False
 
@@ -24,9 +23,9 @@ def connect(sid, environ):
 def send(topic, data):
     s = 1
     msgs.append((topic, data))
-    #sio.emit(topic, data=json.dumps(data), skip_sid=True)
 
-bridge.register_server(send)
+
+bridge = Bridge(conf, send)
 
 
 @sio.on('telemetry')
