@@ -17,7 +17,7 @@ class Controller(object):
         self.last_time    = None
 
         self.pid_control  = PID(5.0, 0.1, 0.02)
-        self.pid_steering = PID(15.0, 1.2, 0.1)
+        self.pid_steering = PID(8.5, 1.2, 0.15)
 
         rospy.Subscriber('/kp', Float32, self.kp_cb)
         rospy.Subscriber('/ki', Float32, self.ki_cb)
