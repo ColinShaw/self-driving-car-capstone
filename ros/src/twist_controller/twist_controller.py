@@ -17,14 +17,14 @@ class Controller(object):
         self.last_time    = None
 
         self.pid_control  = PID(5.0, 0.1, 0.02)
-        self.pid_steering = PID(8.5, 1.2, 0.15)
+        self.pid_steering = PID(0.6, 0.7, 0.4)
 
         rospy.Subscriber('/kp', Float32, self.kp_cb)
         rospy.Subscriber('/ki', Float32, self.ki_cb)
         rospy.Subscriber('/kd', Float32, self.kd_cb)
 
         self.lpf_pre  = LowPassFilter(0.2, 0.1)
-        self.lpf_post = LowPassFilter(0.4, 0.1)
+        self.lpf_post = LowPassFilter(0.7, 0.1)
 
         self.yaw_control  = YawController(wheel_base=wheel_base, 
                                           steer_ratio=steer_ratio,
