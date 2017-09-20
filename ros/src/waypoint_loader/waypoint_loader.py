@@ -80,7 +80,6 @@ class WaypointLoader(object):
         return waypoints
 
 
-
 if __name__ == '__main__':
     try:
         WaypointLoader()
