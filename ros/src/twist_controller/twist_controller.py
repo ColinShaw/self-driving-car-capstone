@@ -25,7 +25,6 @@ class Controller(object):
         self.last_time    = None
 
         self.pid_control  = PID(0.4, 0.2, 0.0, self.decel_limit, self.accel_limit)
-        #self.pid_steering = PID(0.0, 0.0, 0.0, -self.max_steer_angle, self.max_steer_angle)
 
         self.lpf_linear_x = LowPassFilter(1.0, 1.0)
         self.lpf_angular_z = LowPassFilter(1.0, 1.0)
@@ -56,7 +55,6 @@ class Controller(object):
 
         if dbw_enabled is False:
             self.pid_control.reset()
-            self.pid_steering.reset()
 
         if self.last_time is not None:
             time           = rospy.get_time()
