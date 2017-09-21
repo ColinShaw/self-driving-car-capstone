@@ -25,10 +25,10 @@ class Controller(object):
         self.last_time    = None
 
         self.pid_control  = PID(0.4, 0.2, 0.0, self.decel_limit, self.accel_limit)
-        self.pid_steering = PID(0.42, 0.12, 0.05, -self.max_steer_angle, self.max_steer_angle)
+        #self.pid_steering = PID(0.0, 0.0, 0.0, -self.max_steer_angle, self.max_steer_angle)
 
-        self.lpf_pre  = LowPassFilter(0.05, 0.02)
-        self.lpf_post = LowPassFilter(0.45, 0.02)
+        self.lpf_linear_x = LowPassFilter(1.0, 1.0)
+        self.lpf_angular_z = LowPassFilter(1.0, 1.0)
 
         self.yaw_control  = YawController(wheel_base=self.wheel_base,
                                           steer_ratio=self.steer_ratio,
@@ -48,8 +48,8 @@ class Controller(object):
         cv_l = current_velocity.twist.linear
         cv_a = current_velocity.twist.angular
 
-        desired_linear_velocity  = tc_l.x
-        desired_angular_velocity = tc_a.z
+        desired_linear_velocity = self.lpf_linear_x.filter(tc_l.x)
+        desired_angular_velocity = self.lpf_angular_z.filter(tc_a.z)
 
         current_linear_velocity  = cv_l.x
         current_angular_velocity = cv_a.z
@@ -67,29 +67,10 @@ class Controller(object):
             control        = self.pid_control.update(velocity_error, delta_t)
             throttle       = max(0.0, control)
             brake          = max(0.0, -control) + self.brake_deadband
-            """
-            desired_steering = self.yaw_control.get_steering(desired_linear_velocity,
-                                                             desired_angular_velocity,
-                                                             desired_linear_velocity)
-
-            current_steering = self.yaw_control.get_steering(current_linear_velocity,
-                                                             current_angular_velocity,
-                                                             current_linear_velocity)
-
-            steering_error = desired_steering - current_steering
-            steering_error = self.lpf_pre.filter(steering_error)
-
-            steering = self.pid_steering.update(steering_error, delta_t)
-            steering = self.lpf_post.filter(steering)
-            """
-
 
             steering = self.yaw_control.get_steering(desired_linear_velocity,
                                                      desired_angular_velocity,
                                                      current_linear_velocity)
-
-            #steering = self.lpf_post.filter(steering)
-
 
             return throttle, brake, steering
 
