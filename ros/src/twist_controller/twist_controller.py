@@ -22,9 +22,11 @@ class Controller(object):
         self.max_lat_accel = max_lat_accel
         self.max_steer_angle = max_steer_angle
 
+        self.max_brake_torque = self.vehicle_mass * abs(decel_limit) * self.wheel_radius
+
         self.last_time    = None
 
-        self.pid_control  = PID(0.4, 0.2, 0.0, self.decel_limit, self.accel_limit)
+        self.pid_control  = PID(0.4, 0.1, 0.0, self.decel_limit, self.accel_limit)
 
         self.lpf_linear_x = LowPassFilter(1.0, 1.0)
         self.lpf_angular_z = LowPassFilter(1.0, 1.0)
@@ -63,8 +65,15 @@ class Controller(object):
 
             velocity_error = desired_linear_velocity - current_linear_velocity
             control        = self.pid_control.update(velocity_error, delta_t)
-            throttle       = max(0.0, control)
-            brake          = max(0.0, -control) + self.brake_deadband
+
+            throttle = 0.0
+            brake = 0.0
+
+            if control > 0:
+                throttle = control
+            else:
+                brake = self.vehicle_mass * abs(control) * self.wheel_radius
+                #brake = self.max_brake_torque
 
             steering = self.yaw_control.get_steering(desired_linear_velocity,
                                                      desired_angular_velocity,
