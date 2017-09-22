@@ -29,6 +29,7 @@ class WaypointUpdater(object):
         self.current_velocity = 0.0
         self.decel_rate = -5.0
         self.traffic_waypoint = -1
+        self.slowdown = False
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -48,37 +49,46 @@ class WaypointUpdater(object):
             wpts = self.base_waypoints.waypoints
 
             closest_wp = self.get_next_waypoint(pose, wpts)
+            traffic_wp = self.traffic_waypoint
+
+            if hasattr(self, 'set_speed'):
+                self.speed = self.set_speed
+
+            # Calculate stopping distance needed based on current velocity and a tunable decel rate
+            stopping_dist = self.current_velocity**2 / (2*abs(self.decel_rate))
+            if traffic_wp != -1:
+                # Check if we already set the velocities to slow down
+                if self.slowdown == False:
+                    # Set slowdown flag to true so we don't make calculations again
+                    self.slowdown = True
+                    # Check if car is too close to the light to stop
+                    if stopping_dist < self.distance(wpts, closest_wp, traffic_wp):
+                        initial_velocity = self.current_velocity
+                        # Gradually decrease velocity based on distance to light
+                        for i in range(closest_wp, traffic_wp):
+                            dist = self.distance(wpts, i, traffic_wp)
+                            if dist > stopping_dist:
+                                self.set_waypoint_velocity(wpts, i, self.speed)
+                            else:
+                                dist_traveled = stopping_dist - dist
+                                vel = math.sqrt(abs(initial_velocity**2+2*self.decel_rate*dist_traveled))
+                                self.set_waypoint_velocity(wpts, i, vel)
+                        # Set the traffic_wp and wpts passed the light velocity to 0.0
+                        for i in range(traffic_wp, closest_wp + LOOKAHEAD_WPS):
+                            self.set_waypoint_velocity(wpts, i, 0.0)
+                    else:
+                        # If car is too close to the light to stop continue with same velocity
+                        for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
+                            self.set_waypoint_velocity(wpts, i, self.speed)
+            else:
+                self.slowdown = False
+                for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
+                    self.set_waypoint_velocity(wpts, i, self.speed)
 
             # Create forward list of waypoints
             for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
                 index = i % len(wpts)
                 lane.waypoints.append(wpts[index])
-
-            if hasattr(self, 'set_speed'):
-                self.speed = self.set_speed
-
-            traffic_wp = self.traffic_waypoint
-            stopping_dist = self.current_velocity**2 / (2*abs(self.decel_rate))
-            if traffic_wp != -1:
-                if stopping_dist < self.distance(wpts, closest_wp, traffic_wp):
-                    initial_velocity = self.current_velocity
-                    j = 0
-                    for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
-                        dist = self.distance(wpts, i, traffic_wp)
-                        if dist > stopping_dist:
-                            self.set_waypoint_velocity(lane.waypoints, j, self.speed)
-                            j += 1
-                        else:
-                            dist_traveled = stopping_dist - dist
-                            vel = math.sqrt(abs(initial_velocity**2+2*self.decel_rate*dist_traveled))
-                            self.set_waypoint_velocity(lane.waypoints, j, vel)
-                            j += 1
-                else:
-                    for i in range(len(lane.waypoints)):
-                        self.set_waypoint_velocity(lane.waypoints, i, self.speed)
-            else:
-                for i in range(len(lane.waypoints)):
-                    self.set_waypoint_velocity(lane.waypoints, i, self.speed)
 
             self.final_waypoints_pub.publish(lane)
 
