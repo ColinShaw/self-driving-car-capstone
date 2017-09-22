@@ -120,7 +120,7 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        closest_dist = 10000.0 # arbitrary large number
+        closest_dist = float('inf')
         closest_wp = 0
         for i in range(len(waypoints)):
             dist = self.distance(pose.position.x, pose.position.y,
@@ -298,7 +298,7 @@ class TLDetector(object):
         light_positions = self.config['stop_line_positions']
         light_waypoints = []
         max_visible_dist = 50.0 # need to find optimal value
-        min_dist = 10000.0
+        min_dist = float('inf')
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose, self.waypoints.waypoints)
             # Find the closest visible traffic light (if one exists)
