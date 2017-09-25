@@ -36,7 +36,7 @@ class TLClassifier(object):
         image = cv2.resize(image, (224,224), interpolation=cv2.INTER_NEAREST)
         image = np.expand_dims(image, axis=0)
         image = image.astype(dtype=np.float64, copy=False)
-        image = preprocess_input(image)
+        image = image / 255.
         start_time = time.time()
         pred = self.get_output([image, 0])[0]
         rospy.logwarn('---{} seconds---'.format(time.time() - start_time))
