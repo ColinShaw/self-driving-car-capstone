@@ -76,7 +76,6 @@ class TLDetector(object):
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
-        rospy.logwarn('S: ' + str(state) + ' WP: ' + str(light_wp))
         '''
         Publish upcoming red lights at camera frequency.
         Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
@@ -94,6 +93,7 @@ class TLDetector(object):
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
+        rospy.logwarn('S: ' + str(state) + ' WP: ' + str(light_wp))
 
     def distance(self, x1, y1, x2, y2):
         """Calculates the distance between two points
@@ -225,10 +225,6 @@ class TLDetector(object):
         self.camera_image.encoding = "rgb8"
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
 
-        # x, y = self.project_to_image_plane(light.pose.pose.position)
-
-        #TODO use light location to zoom in on traffic light in image
-
         #Get classification
         return self.light_classifier.get_classification(cv_image)
 
@@ -296,7 +292,6 @@ class TLDetector(object):
         """
         light = None
         light_positions = self.config['stop_line_positions']
-        light_waypoints = []
         max_visible_dist = 50.0 # need to find optimal value
         min_dist = float('inf')
         if(self.pose):
