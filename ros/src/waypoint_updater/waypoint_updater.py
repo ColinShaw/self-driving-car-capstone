@@ -6,9 +6,13 @@ import tf
 from   geometry_msgs.msg import PoseStamped, TwistStamped
 from   styx_msgs.msg     import Lane, Waypoint
 from   std_msgs.msg      import Int32, Float32
+from   copy              import deepcopy
 
 
 LOOKAHEAD_WPS = 200
+MAX_DECEL     = 1.0
+MAX_VEL       = 4.4704
+STOP_BUFFER   = 4.0
 
 
 class WaypointUpdater(object):
@@ -24,12 +28,9 @@ class WaypointUpdater(object):
         # For testing and manual topic control
         rospy.Subscriber('/set_speed', Float32, self.set_speed_cb)
 
-        # Set speed to default 4.47m/s (~10mph)
-        self.speed = 4.47
         self.current_velocity = 0.0
-        self.decel_rate = -5.0
         self.traffic_waypoint = -1
-        self.slowdown = False
+        self.braking = False
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -48,49 +49,77 @@ class WaypointUpdater(object):
             pose = self.current_pose
             wpts = self.base_waypoints.waypoints
 
-            closest_wp = self.get_next_waypoint(pose, wpts)
+            next_wp = self.get_next_waypoint(pose, wpts)
             traffic_wp = self.traffic_waypoint
 
-            if hasattr(self, 'set_speed'):
-                self.speed = self.set_speed
 
-            # Calculate stopping distance needed based on current velocity and a tunable decel rate
-            stopping_dist = self.current_velocity**2 / (2*abs(self.decel_rate))
+            min_stopping_dist = self.current_velocity**2 / (2 * MAX_DECEL)
+            max_stopping_dist = (2 * self.current_velocity**2) / (2 * MAX_DECEL)
+
             if traffic_wp != -1:
-                # Check if we already set the velocities to slow down
-                if self.slowdown == False:
-                    # Set slowdown flag to true so we don't make calculations again
-                    self.slowdown = True
-                    # Check if car is too close to the light to stop
-                    if stopping_dist < self.distance(wpts, closest_wp, traffic_wp):
-                        initial_velocity = self.current_velocity
-                        # Gradually decrease velocity based on distance to light
-                        for i in range(closest_wp, traffic_wp):
-                            dist = self.distance(wpts, i, traffic_wp)
-                            if dist > stopping_dist:
-                                self.set_waypoint_velocity(wpts, i, self.speed)
-                            else:
-                                dist_traveled = stopping_dist - dist
-                                vel = math.sqrt(abs(initial_velocity**2+2*self.decel_rate*dist_traveled))
-                                self.set_waypoint_velocity(wpts, i, vel)
-                        # Set the traffic_wp and wpts passed the light velocity to 0.0
-                        for i in range(traffic_wp, closest_wp + LOOKAHEAD_WPS):
-                            self.set_waypoint_velocity(wpts, i, 0.0)
-                    else:
-                        # If car is too close to the light to stop continue with same velocity
-                        for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
-                            self.set_waypoint_velocity(wpts, i, self.speed)
+                self.braking = True
+                lane.waypoints = self.get_final_waypoints(wpts, next_wp, traffic_wp)
             else:
-                self.slowdown = False
-                for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
-                    self.set_waypoint_velocity(wpts, i, self.speed)
-
-            # Create forward list of waypoints
-            for i in range(closest_wp, closest_wp + LOOKAHEAD_WPS):
-                index = i % len(wpts)
-                lane.waypoints.append(wpts[index])
+                self.braking = False
+                lane.waypoints = self.get_final_waypoints(wpts, next_wp, next_wp+LOOKAHEAD_WPS)
 
             self.final_waypoints_pub.publish(lane)
+
+
+    def get_final_waypoints(self, waypoints, start_wp, end_wp):
+        final_waypoints = []
+        for i in range(start_wp, end_wp):
+            index = i % len(waypoints)
+            wp = deepcopy(waypoints[index])
+            if self.braking:
+                wp.twist.twist.linear.x  = min(self.current_velocity, MAX_VEL)
+            else:
+                wp.twist.twist.linear.x = MAX_VEL # Use MAX_VEL for testing only
+            wp.twist.twist.linear.y = 0.0
+            wp.twist.twist.linear.z = 0.0
+            final_waypoints.append(wp)
+
+        if self.braking:
+            tl_wp = len(final_waypoints)
+            for i in range(end_wp, start_wp + LOOKAHEAD_WPS):
+                index = i % len(waypoints)
+                wp = deepcopy(waypoints[index])
+                wp.twist.twist.linear.x = 0.0
+                wp.twist.twist.linear.y = 0.0
+                wp.twist.twist.linear.z = 0.0
+                final_waypoints.append(wp)
+            final_waypoints = self.decelerate(final_waypoints, tl_wp)
+
+        return final_waypoints
+
+
+    def decelerate(self, waypoints, tl_wp):
+        last = waypoints[tl_wp]
+        last.twist.twist.linear.x = 0.0
+        for wp in waypoints[:tl_wp][::-1]:
+            dist = self.distance(wp.pose.pose.position, last.pose.pose.position)
+            dist = max(0.0, dist - STOP_BUFFER)
+            vel  = math.sqrt(2 * MAX_DECEL * dist)
+            if vel < 1.0:
+                vel = 0.0
+            wp.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
+        return waypoints
+
+
+    def distance(self, p1, p2):
+        x = p1.x - p2.x
+        y = p1.y - p2.y
+        z = p1.z - p2.z
+        return math.sqrt(x*x + y*y + z*z)
+
+
+    def wp_distance(self, waypoints, wp1, wp2):
+        dist = 0.0
+        dl   = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+        for i in range(wp1, wp2+1):
+            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
+            wp1   = i
+        return dist
 
 
     def current_pose_cb(self, msg):
@@ -121,16 +150,7 @@ class WaypointUpdater(object):
 
 
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
-        waypoints[waypoint].twist.twist.linear.x = velocity
-
-
-    def distance(self, waypoints, wp1, wp2):
-        dist = 0.0
-        dl   = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-        for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-            wp1   = i
-        return dist
+        waypoints[waypoint].twist.twist.linear.x = min(velocity, MAX_VEL)
 
 
     def get_closest_waypoint(self, pose, waypoints):
