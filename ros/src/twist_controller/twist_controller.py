@@ -55,10 +55,11 @@ class Controller(object):
         current_linear_velocity  = cv_l.x
         current_angular_velocity = cv_a.z
 
-        if dbw_enabled is False:
-            self.pid_control.reset()
+        if self.last_time is None:
+            self.last_time = rospy.get_time()
+            return 0.0, 0.0, 0.0
 
-        if self.last_time is not None:
+        if dbw_enabled:
             time           = rospy.get_time()
             delta_t        = time - self.last_time
             self.last_time = time
@@ -73,7 +74,6 @@ class Controller(object):
                 throttle = control
             else:
                 brake = self.vehicle_mass * abs(control) * self.wheel_radius
-                #brake = self.max_brake_torque
 
             steering = self.yaw_control.get_steering(desired_linear_velocity,
                                                      desired_angular_velocity,
@@ -82,5 +82,5 @@ class Controller(object):
             return throttle, brake, steering
 
         else:
-            self.last_time = rospy.get_time()
+            self.pid_control.reset()
             return 0.0, 0.0, 0.0
