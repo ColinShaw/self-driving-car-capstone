@@ -56,7 +56,7 @@ class WaypointLoader(object):
 
                 q = self.quaternion_from_yaw(float(wp['yaw']))
                 p.pose.pose.orientation = Quaternion(*q)
-                p.twist.twist.linear.x  = float(self.velocity * 0.27778)
+                p.twist.twist.linear.x  = float(self.velocity * 0.44704)
                 waypoints.append(p)
         return self.decelerate(waypoints)
 
@@ -73,7 +73,7 @@ class WaypointLoader(object):
         last.twist.twist.linear.x = 0.0
         for wp in waypoints[:-1][::-1]:
             dist = self.distance(wp.pose.pose.position, last.pose.pose.position)
-            vel  = math.sqrt(2 * MAX_DECEL * dist) * 3.6
+            vel  = math.sqrt(2 * MAX_DECEL * dist)
             if vel < 1.0:
                 vel = 0.0
             wp.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
@@ -85,4 +85,3 @@ if __name__ == '__main__':
         WaypointLoader()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint node.')
-
