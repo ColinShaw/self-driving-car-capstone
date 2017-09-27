@@ -18,7 +18,7 @@ class WaypointLoader(object):
     def __init__(self):
         rospy.init_node('waypoint_loader', log_level=rospy.DEBUG)
         self.pub      = rospy.Publisher('/base_waypoints', Lane, queue_size=1, latch=True)
-        self.velocity = rospy.get_param('~velocity')
+        self.velocity = self.kmph2mps(rospy.get_param('~velocity'))
         self.new_waypoint_loader(rospy.get_param('~path'))
         self.publish()
         rospy.spin()
@@ -44,6 +44,10 @@ class WaypointLoader(object):
         return tf.transformations.quaternion_from_euler(0.0, 0.0, yaw)
 
 
+    def kmph2mps(self, velocity_kmph):
+        return (velocity_kmph * 1000.0) / (60.0 * 60.0)
+
+
     def load_waypoints(self, fname):
         waypoints = []
         with open(fname) as wfile:
@@ -56,8 +60,10 @@ class WaypointLoader(object):
 
                 q = self.quaternion_from_yaw(float(wp['yaw']))
                 p.pose.pose.orientation = Quaternion(*q)
-                p.twist.twist.linear.x  = float(self.velocity*0.27778) # velocity is kmph
+                p.twist.twist.linear.x  = float(self.velocity)
+
                 waypoints.append(p)
+
         return self.decelerate(waypoints)
 
 
@@ -85,3 +91,4 @@ if __name__ == '__main__':
         WaypointLoader()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint node.')
+
