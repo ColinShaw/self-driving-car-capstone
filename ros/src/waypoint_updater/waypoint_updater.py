@@ -11,7 +11,6 @@ from   copy              import deepcopy
 
 LOOKAHEAD_WPS = 200
 MAX_DECEL     = 1.0
-MAX_VEL       = 4.4704
 STOP_BUFFER   = 4.0
 
 
@@ -25,8 +24,6 @@ class WaypointUpdater(object):
         rospy.Subscriber('/traffic_waypoint',  Int32,       self.traffic_waypoint_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32,       self.obstacle_waypoint_cb)
         rospy.Subscriber('/current_velocity',  TwistStamped,self.current_velocity_cb)
-        # For testing and manual topic control
-        rospy.Subscriber('/set_speed', Float32, self.set_speed_cb)
 
         self.current_velocity = 0.0
         self.traffic_waypoint = -1
@@ -70,23 +67,31 @@ class WaypointUpdater(object):
         final_waypoints = []
         for i in range(start_wp, end_wp):
             index = i % len(waypoints)
-            wp = deepcopy(waypoints[index])
+            wp = Waypoint()
+            wp.pose.pose.position.x  = waypoints[index].pose.pose.position.x
+            wp.pose.pose.position.y  = waypoints[index].pose.pose.position.y
+            wp.pose.pose.position.z  = waypoints[index].pose.pose.position.z
+            wp.pose.pose.orientation = waypoints[index].pose.pose.orientation
             if self.braking:
-                wp.twist.twist.linear.x  = min(self.current_velocity, MAX_VEL)
+                wp.twist.twist.linear.x  = min(self.current_velocity,
+                                               waypoints[index].twist.twist.linear.x)
             else:
-                wp.twist.twist.linear.x = MAX_VEL # Use MAX_VEL for testing only
-            wp.twist.twist.linear.y = 0.0
-            wp.twist.twist.linear.z = 0.0
+                wp.twist.twist.linear.x = waypoints[index].twist.twist.linear.x
+
             final_waypoints.append(wp)
 
         if self.braking:
+            # Find the traffic_wp index in final_waypoints to pass to decelerate
             tl_wp = len(final_waypoints)
+            # If we are braking set all waypoints passed traffic_wp within LOOKAHEAD_WPS to 0.0
             for i in range(end_wp, start_wp + LOOKAHEAD_WPS):
                 index = i % len(waypoints)
-                wp = deepcopy(waypoints[index])
-                wp.twist.twist.linear.x = 0.0
-                wp.twist.twist.linear.y = 0.0
-                wp.twist.twist.linear.z = 0.0
+                wp = Waypoint()
+                wp.pose.pose.position.x  = waypoints[index].pose.pose.position.x
+                wp.pose.pose.position.y  = waypoints[index].pose.pose.position.y
+                wp.pose.pose.position.z  = waypoints[index].pose.pose.position.z
+                wp.pose.pose.orientation = waypoints[index].pose.pose.orientation
+                wp.twist.twist.linear.x  = 0.0
                 final_waypoints.append(wp)
             final_waypoints = self.decelerate(final_waypoints, tl_wp)
 
@@ -98,7 +103,7 @@ class WaypointUpdater(object):
         last.twist.twist.linear.x = 0.0
         for wp in waypoints[:tl_wp][::-1]:
             dist = self.distance(wp.pose.pose.position, last.pose.pose.position)
-            dist = max(0.0, dist - STOP_BUFFER)
+            dist = max(0.0, dist-STOP_BUFFER)
             vel  = math.sqrt(2 * MAX_DECEL * dist)
             if vel < 1.0:
                 vel = 0.0
@@ -113,15 +118,6 @@ class WaypointUpdater(object):
         return math.sqrt(x*x + y*y + z*z)
 
 
-    def wp_distance(self, waypoints, wp1, wp2):
-        dist = 0.0
-        dl   = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-        for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-            wp1   = i
-        return dist
-
-
     def current_pose_cb(self, msg):
         self.current_pose = msg
 
@@ -133,24 +129,13 @@ class WaypointUpdater(object):
     def traffic_waypoint_cb(self, msg):
         self.traffic_waypoint = msg.data
 
+
     def current_velocity_cb(self, msg):
         self.current_velocity = msg.twist.linear.x
 
 
     def obstacle_waypoint_cb(self, msg):
         self.obstacle_waypoint = msg.data
-
-
-    def set_speed_cb(self, msg):
-        self.set_speed = msg.data
-
-
-    def get_waypoint_velocity(self, waypoint):
-        return waypoint.twist.twist.linear.x
-
-
-    def set_waypoint_velocity(self, waypoints, waypoint, velocity):
-        waypoints[waypoint].twist.twist.linear.x = min(velocity, MAX_VEL)
 
 
     def get_closest_waypoint(self, pose, waypoints):
