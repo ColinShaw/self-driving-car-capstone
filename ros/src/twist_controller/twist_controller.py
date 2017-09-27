@@ -22,14 +22,11 @@ class Controller(object):
         self.max_lat_accel = max_lat_accel
         self.max_steer_angle = max_steer_angle
 
-        self.max_brake_torque = self.vehicle_mass * abs(decel_limit) * self.wheel_radius
+        self.max_brake_torque = self.vehicle_mass * abs(self.decel_limit) * self.wheel_radius
 
         self.last_time    = None
 
         self.pid_control  = PID(0.4, 0.1, 0.0, self.decel_limit, self.accel_limit)
-
-        self.lpf_linear_x = LowPassFilter(1.0, 1.0)
-        self.lpf_angular_z = LowPassFilter(1.0, 1.0)
 
         self.yaw_control  = YawController(wheel_base=self.wheel_base,
                                           steer_ratio=self.steer_ratio,
@@ -49,8 +46,8 @@ class Controller(object):
         cv_l = current_velocity.twist.linear
         cv_a = current_velocity.twist.angular
 
-        desired_linear_velocity = self.lpf_linear_x.filter(tc_l.x)
-        desired_angular_velocity = self.lpf_angular_z.filter(tc_a.z)
+        desired_linear_velocity = tc_l.x
+        desired_angular_velocity = tc_a.z
 
         current_linear_velocity  = cv_l.x
         current_angular_velocity = cv_a.z
