@@ -46,12 +46,11 @@ class WaypointUpdater(object):
             pose = self.current_pose
             wpts = self.base_waypoints.waypoints
 
-            next_wp = self.get_next_waypoint(pose, wpts)
+            next_wp    = self.get_next_waypoint(pose, wpts)
             traffic_wp = self.traffic_waypoint
 
-
             min_stopping_dist = self.current_velocity**2 / (2 * MAX_DECEL)
-            max_stopping_dist = (2 * self.current_velocity**2) / (2 * MAX_DECEL)
+            max_stopping_dist = self.current_velocity**2 / (2 * MAX_DECEL * 0.75)
 
             if traffic_wp != -1:
                 self.braking = True
@@ -73,8 +72,8 @@ class WaypointUpdater(object):
             wp.pose.pose.position.z  = waypoints[index].pose.pose.position.z
             wp.pose.pose.orientation = waypoints[index].pose.pose.orientation
             if self.braking:
-                wp.twist.twist.linear.x  = min(self.current_velocity,
-                                               waypoints[index].twist.twist.linear.x)
+                wp.twist.twist.linear.x = min(self.current_velocity,
+                                              waypoints[index].twist.twist.linear.x)
             else:
                 wp.twist.twist.linear.x = waypoints[index].twist.twist.linear.x
 
