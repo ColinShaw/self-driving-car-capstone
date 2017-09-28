@@ -76,6 +76,7 @@ class WaypointUpdater(object):
             wp.pose.pose.position.y  = waypoints[index].pose.pose.position.y
             wp.pose.pose.position.z  = waypoints[index].pose.pose.position.z
             wp.pose.pose.orientation = waypoints[index].pose.pose.orientation
+
             if self.braking:
                 # Slowly creep up to light if we have stopped short
                 dist = self.distance(wp.pose.pose.position, waypoints[end_wp].pose.pose.position)
@@ -92,6 +93,7 @@ class WaypointUpdater(object):
         if self.braking:
             # Find the traffic_wp index in final_waypoints to pass to decelerate
             tl_wp = len(final_waypoints)
+
             # If we are braking set all waypoints passed traffic_wp within LOOKAHEAD_WPS to 0.0
             for i in range(end_wp, start_wp + LOOKAHEAD_WPS):
                 index = i % len(waypoints)

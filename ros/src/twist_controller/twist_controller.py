@@ -30,8 +30,7 @@ class Controller(object):
         self.max_brake_torque   = self.total_vehicle_mass * abs(self.decel_limit) * self.wheel_radius
 
         self.last_time   = None
-        #self.pid_control = PID(0.4, 0.02, 0.05, self.decel_limit, self.accel_limit)
-        self.pid_control = PID(0.4, 0.02, 0.05)
+        self.pid_control = PID(5.0, 0.05, 0.0)
         self.yaw_control = YawController(wheel_base      = self.wheel_base,
                                          steer_ratio     = self.steer_ratio,
                                          min_speed       = 0.0,
@@ -75,8 +74,8 @@ class Controller(object):
 
             rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
             rospy.logwarn('Control:  {: 04.2f}'.format(control))
-            rospy.logwarn('Throttle: {:04.2f}'.format(throttle))
-            rospy.logwarn('Brake:    {:06.2f}'.format(brake))
+            rospy.logwarn('Throttle: {: 04.2f}'.format(throttle))
+            rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
             rospy.logwarn('Speed:    {: 04.2f}'.format(current_linear_velocity))
             rospy.logwarn('')
 
