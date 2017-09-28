@@ -11,7 +11,7 @@ from   copy              import deepcopy
 
 LOOKAHEAD_WPS = 200
 MAX_DECEL     = 4.0
-STOP_BUFFER   = 4.0
+STOP_BUFFER   = 5.0
 
 
 class WaypointUpdater(object):
@@ -50,9 +50,11 @@ class WaypointUpdater(object):
             next_wp    = self.get_next_waypoint(pose, wpts)
             traffic_wp = self.traffic_waypoint
 
+            # Get current distance from traffic light and minimum distance need to stop
             tl_dist = self.distance(pose.pose.position, wpts[traffic_wp].pose.pose.position)
             min_stopping_dist = self.current_velocity**2 / (2. * MAX_DECEL) + STOP_BUFFER
 
+            # Brake if a red light is detected and we have enough room to stop
             if traffic_wp == -1:
                 self.braking = False
                 lane.waypoints = self.get_final_waypoints(wpts, next_wp, next_wp+LOOKAHEAD_WPS)
@@ -75,11 +77,17 @@ class WaypointUpdater(object):
             wp.pose.pose.position.z  = waypoints[index].pose.pose.position.z
             wp.pose.pose.orientation = waypoints[index].pose.pose.orientation
             if self.braking:
-                wp.twist.twist.linear.x = min(self.current_velocity,
-                                              waypoints[index].twist.twist.linear.x)
+                # Slowly creep up to light if we have stopped short
+                dist = self.distance(wp.pose.pose.position, waypoints[end_wp].pose.pose.position)
+                if dist > STOP_BUFFER and self.current_velocity < 1.0:
+                    wp.twist.twist.linear.x = 1.0
+                elif dist < STOP_BUFFER and self.current_velocity < 1.0:
+                    wp.twist.twist.linear.x = 0.0
+                else:
+                    wp.twist.twist.linear.x = min(self.current_velocity,
+                                                  waypoints[index].twist.twist.linear.x)
             else:
                 wp.twist.twist.linear.x = waypoints[index].twist.twist.linear.x
-
             final_waypoints.append(wp)
 
         if self.braking:
