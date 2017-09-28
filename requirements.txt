@@ -8,3 +8,4 @@ scipy
 keras
 tensorflow-gpu==1.2.1
 h5py
+requests
