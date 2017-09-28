@@ -44,17 +44,14 @@ class Controller(object):
         if not all((twist_cmd, current_velocity)):
             return 0.0, 0.0, 0.0
 
-        tc_l = twist_cmd.twist.linear
-        tc_a = twist_cmd.twist.angular
+        desired_linear_velocity = twist_cmd.twist.linear.x
+        desired_angular_velocity = twist_cmd.twist.angular.z
 
-        cv_l = current_velocity.twist.linear
-        cv_a = current_velocity.twist.angular
+        current_linear_velocity  = current_velocity.twist.linear.x
+        current_angular_velocity = current_velocity.twist.angular.z
 
-        desired_linear_velocity = tc_l.x
-        desired_angular_velocity = tc_a.z
-
-        current_linear_velocity  = cv_l.x
-        current_angular_velocity = cv_a.z
+        if abs(desired_linear_velocity) < 1.0:
+            self.pid_control.reset()
 
         if self.last_time is None:
             self.last_time = rospy.get_time()
