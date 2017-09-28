@@ -81,7 +81,7 @@ class WaypointUpdater(object):
                 # Slowly creep up to light if we have stopped short
                 dist = self.distance(wp.pose.pose.position, waypoints[end_wp].pose.pose.position)
                 if dist > STOP_BUFFER and self.current_velocity < 1.0:
-                    wp.twist.twist.linear.x = 1.0
+                    wp.twist.twist.linear.x = 2.0
                 elif dist < STOP_BUFFER and self.current_velocity < 1.0:
                     wp.twist.twist.linear.x = 0.0
                 else:
@@ -184,4 +184,3 @@ if __name__ == '__main__':
         WaypointUpdater()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint updater node.')
-
