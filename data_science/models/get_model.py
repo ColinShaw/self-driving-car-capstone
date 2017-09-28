@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+# source: user115202
+# https://stackoverflow.com/questions/25010369/wget-curl-large-file-from-google-drive/25033499#25033499
+
+import requests
+
+def download_file_from_google_drive(id, destination):
+    def get_confirm_token(response):
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                return value
+
+        return None
+
+    def save_response_content(response, destination):
+        CHUNK_SIZE = 32768
+
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(CHUNK_SIZE):
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+
+    URL = "https://drive.google.com/uc?export=download"
+
+    session = requests.Session()
+
+    response = session.get(URL, params = { 'id' : id }, stream = True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+
+    save_response_content(response, destination)
+
+
+if __name__ == "__main__":
+    import sys, os
+    # TAKE ID FROM SHAREABLE LINK
+    file_id = "0B1TNQWukG_RDQ2JXUGdYQTlsSzA"
+    # DESTINATION FILE ON YOUR DISK
+    destination = "udacity_vgg_fine_tuning_combined.h5"
+    if not os.path.isfile(destination):
+        download_file_from_google_drive(file_id, destination)
