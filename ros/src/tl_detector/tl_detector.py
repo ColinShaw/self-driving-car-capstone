@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-import rospy
-from std_msgs.msg import Int32, Header
-from geometry_msgs.msg import PoseStamped, Pose, Quaternion
-from styx_msgs.msg import TrafficLightArray, TrafficLight
-from styx_msgs.msg import Lane
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
-from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
-import numpy as np
 import math
+import rospy
+import numpy as np
+from std_msgs.msg      import Int32, Header
+from geometry_msgs.msg import PoseStamped, Pose, Quaternion
+from styx_msgs.msg     import TrafficLightArray, TrafficLight
+from styx_msgs.msg     import Lane
+from sensor_msgs.msg   import Image
+from cv_bridge         import CvBridge
+from light_classification.tl_classifier import TLClassifier
 
 
 STATE_COUNT_THRESHOLD = 3
@@ -34,7 +34,7 @@ class TLDetector(object):
         rospy.Subscriber('/image_color',            Image,             self.image_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
-        self.config = yaml.load(config_string)
+        self.config   = yaml.load(config_string)
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
@@ -160,14 +160,12 @@ class TLDetector(object):
 
 
     def get_light_state(self, light):
-        if(not self.has_image):
+        if not self.has_image:
             self.prev_light_loc = None
             return False
 
-        self.camera_image.encoding = "rgb8"
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
-
-        #Get classification
+        self.camera_image.encoding = 'rgb8'
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, 'rgb8')
         return self.light_classifier.get_classification(cv_image)
 
 

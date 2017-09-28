@@ -9,6 +9,7 @@ from   std_msgs.msg   import Float32
 GAS_DENSITY    = 2.858
 THROTTLE_MAX   = 0.8
 THROTTLE_CONST = 1.0
+BRAKE_MAX      = 0.8
 BRAKE_CONST    = 0.5
 
 
@@ -27,7 +28,7 @@ class Controller(object):
         self.max_steer_angle = rospy.get_param('~max_steer_angle')
 
         self.total_vehicle_mass = self.vehicle_mass + self.fuel_capacity * GAS_DENSITY
-        self.max_brake_torque   = self.total_vehicle_mass * abs(self.decel_limit) * self.wheel_radius
+        self.max_brake_torque   = BRAKE_MAX * self.total_vehicle_mass * abs(self.decel_limit) * self.wheel_radius
 
         self.last_time   = None
         self.pid_control = PID(5.0, 0.05, 0.0)
@@ -72,12 +73,12 @@ class Controller(object):
             else:
                 brake = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST) 
 
-            rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
-            rospy.logwarn('Control:  {: 04.2f}'.format(control))
-            rospy.logwarn('Throttle: {: 04.2f}'.format(throttle))
-            rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
-            rospy.logwarn('Speed:    {: 04.2f}'.format(current_linear_velocity))
-            rospy.logwarn('')
+            #rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
+            #rospy.logwarn('Control:  {: 04.2f}'.format(control))
+            #rospy.logwarn('Throttle: {: 04.2f}'.format(throttle))
+            #rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
+            #rospy.logwarn('Speed:    {: 04.2f}'.format(current_linear_velocity))
+            #rospy.logwarn('')
 
             steering = self.yaw_control.get_steering(desired_linear_velocity,
                                                      desired_angular_velocity,
