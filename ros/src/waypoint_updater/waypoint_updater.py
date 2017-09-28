@@ -52,7 +52,7 @@ class WaypointUpdater(object):
 
             # Get current distance from traffic light and minimum distance need to stop
             tl_dist = self.distance(pose.pose.position, wpts[traffic_wp].pose.pose.position)
-            min_stopping_dist = self.current_velocity**2 / (2. * MAX_DECEL) + STOP_BUFFER
+            min_stopping_dist = self.current_velocity**2 / (2.0 * MAX_DECEL) + STOP_BUFFER
 
             # Brake if a red light is detected and we have enough room to stop
             if traffic_wp == -1:
@@ -84,8 +84,7 @@ class WaypointUpdater(object):
                 elif dist < STOP_BUFFER and self.current_velocity < 1.0:
                     wp.twist.twist.linear.x = 0.0
                 else:
-                    wp.twist.twist.linear.x = min(self.current_velocity,
-                                                  waypoints[index].twist.twist.linear.x)
+                    wp.twist.twist.linear.x = min(self.current_velocity, waypoints[index].twist.twist.linear.x)
             else:
                 wp.twist.twist.linear.x = waypoints[index].twist.twist.linear.x
             final_waypoints.append(wp)
@@ -113,7 +112,7 @@ class WaypointUpdater(object):
         last.twist.twist.linear.x = 0.0
         for wp in waypoints[:tl_wp][::-1]:
             dist = self.distance(wp.pose.pose.position, last.pose.pose.position)
-            dist = max(0.0, dist-STOP_BUFFER)
+            dist = max(0.0, dist - STOP_BUFFER)
             vel  = math.sqrt(2 * self.decel * dist)
             if vel < 1.0:
                 vel = 0.0
@@ -149,21 +148,10 @@ class WaypointUpdater(object):
 
 
     def get_closest_waypoint(self, pose, waypoints):
-        """Identifies the closest path waypoint to the given position
-            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
-        Args:
-            pose (Pose): position to match a waypoint to
-
-        Returns:
-            int: index of the closest waypoint in self.waypoints
-
-        """
         closest_dist = float('inf')
         closest_wp = 0
         for i in range(len(waypoints)):
-            dist = math.sqrt((pose.pose.position.x-waypoints[i].pose.pose.position.x)**2 \
-                            +(pose.pose.position.y-waypoints[i].pose.pose.position.y)**2 \
-                            +(pose.pose.position.z-waypoints[i].pose.pose.position.z)**2)
+            dist = self.distance(pose.pose.position, waypoints[i].pose.pose.position)
             if dist < closest_dist:
                 closest_dist = dist
                 closest_wp = i
@@ -172,15 +160,6 @@ class WaypointUpdater(object):
 
 
     def get_next_waypoint(self, pose, waypoints):
-        """Identifies the closest path waypoint that's ahead of the given position
-
-        Args:
-            pose (Pose): position to match a waypoint to
-
-        Returns:
-            int: index of the next waypoint in self.waypoints
-
-        """
         closest_wp = self.get_closest_waypoint(pose, waypoints)
         wp_x = waypoints[closest_wp].pose.pose.position.x
         wp_y = waypoints[closest_wp].pose.pose.position.y
@@ -192,7 +171,7 @@ class WaypointUpdater(object):
         euler_angles_xyz = tf.transformations.euler_from_quaternion([x,y,z,w])
         theta = euler_angles_xyz[-1]
         angle = math.fabs(theta-heading)
-        if angle > math.pi/4:
+        if angle > math.pi / 4.0:
             closest_wp += 1
 
         return closest_wp
@@ -203,3 +182,4 @@ if __name__ == '__main__':
         WaypointUpdater()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint updater node.')
+
