@@ -32,27 +32,18 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        #TODO implement light color prediction
         image = cv2.resize(image, (224,224), interpolation=cv2.INTER_NEAREST)
         image = np.expand_dims(image, axis=0)
         image = image.astype(dtype=np.float64, copy=False)
         image = image / 255.
         start_time = time.time()
         pred = self.get_output([image, 0])[0]
-        rospy.logwarn('---{} seconds---'.format(time.time() - start_time))
-
-        # Get the index with max value that corresponds to the predicted state
         pred = np.argmax(pred)
-        rospy.logwarn('argmax: {}'.format(pred))
-
-        # Find class based on prediction index (need to confirm labels are correct order)
+        # pred 0 == green, 1 == unknown, 2 == red, 3 == yellow
+        # Classify light as RED unless we explicity get a GREEN classification
         if pred == 0:
             state = TrafficLight.GREEN
-        elif pred == 1:
-            state = TrafficLight.UNKNOWN # index 1 corresponds to no light
-        elif pred == 2:
-            state = TrafficLight.RED
         else:
-            state = TrafficLight.YELLOW
+            state = TrafficLight.RED
 
         return state
