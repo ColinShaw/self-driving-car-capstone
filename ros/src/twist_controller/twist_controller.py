@@ -1,4 +1,5 @@
 import rospy
+import math
 from   yaw_controller import YawController
 from   pid            import PID
 from   lowpass        import LowPassFilter
@@ -6,7 +7,10 @@ from   std_msgs.msg   import Float32
 
 
 GAS_DENSITY = 2.858
-ONE_MPH = 0.44704
+THROTTLE_MAX = 0.8
+THROTTLE_CONST = 1.0
+BRAKE_CONST = 0.5
+
 
 class Controller(object):
 
@@ -26,7 +30,7 @@ class Controller(object):
 
         self.last_time    = None
 
-        self.pid_control  = PID(0.4, 0.1, 0.0, self.decel_limit, self.accel_limit)
+        self.pid_control  = PID(0.4, 0.02, 0.05, self.decel_limit, self.accel_limit)
 
         self.yaw_control  = YawController(wheel_base=self.wheel_base,
                                           steer_ratio=self.steer_ratio,
@@ -67,10 +71,10 @@ class Controller(object):
             throttle = 0.0
             brake = 0.0
 
-            if control > 0:
-                throttle = control
+            if control >= 0.0:
+                throttle = self.soft_scale(control, THROTTLE_MAX, THROTTLE_CONST)
             else:
-                brake = self.vehicle_mass * abs(control) * self.wheel_radius
+                brake = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST) 
 
             steering = self.yaw_control.get_steering(desired_linear_velocity,
                                                      desired_angular_velocity,
@@ -81,3 +85,11 @@ class Controller(object):
         else:
             self.pid_control.reset()
             return 0.0, 0.0, 0.0
+
+
+    def soft_scale(self, value, scale, stretch):
+        if value <= 0.0:
+            return 0.0
+        else:
+            return scale * math.tanh(value * stretch)
+
