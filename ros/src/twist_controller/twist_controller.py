@@ -58,7 +58,7 @@ class Controller(object):
         current_linear_velocity  = current_velocity.twist.linear.x
         current_angular_velocity = current_velocity.twist.angular.z
 
-        if abs(desired_linear_velocity) < 1.0:
+        if abs(desired_linear_velocity) < 0.5:
             self.pid_control.reset()
 
         if dbw_enabled:
@@ -71,7 +71,7 @@ class Controller(object):
             if control >= 0.0:
                 throttle = self.soft_scale(control, THROTTLE_MAX, THROTTLE_CONST)
             else:
-                brake = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST) 
+                brake = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST)
 
             #rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
             #rospy.logwarn('Control:  {: 04.2f}'.format(control))
@@ -96,4 +96,3 @@ class Controller(object):
             return 0.0
         else:
             return scale * math.tanh(value * stretch)
-
