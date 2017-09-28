@@ -1,7 +1,6 @@
-# Udacity Capstone Project 
+# SDC Fun
 
-This is our `SDC Fun` team repo for the capstone project in Udacity's Self-Driving Car Nanodegree 
-program.  Our team members are:
+This is the `SDC Fun` team repo for the capstone project of Udacity's Self-Driving Car Engineer Nanodegree. The team members are:
 
  * James Barfield (jamesbarfield87@gmail.com)
  * Nick Condo(nicholas.condo@gmail.com)
@@ -9,29 +8,27 @@ program.  Our team members are:
  * Nimish Sanghi (nimish.sanghi@gmail.com)
  * Colin Shaw (colin.shaw@aya.yale.edu)
 
-
 ### Building and running the project
 
-The original project repo can be found [here](https://github.com/udacity/CarND-Capstone), 
+The original project repo can be found [here](https://github.com/udacity/CarND-Capstone),
 which has a lot of information about environment, simulator, etc.
 
-This project depends on having CUDA and cuDNN installed in order to function
-properly.  Reason is the inference speed for traffic light detection.  You will
-notice a `requirements.txt` file in the root of the project.  If your machine does
-not satisfy the above requirement, you will need to change the `tensorflow-gpu`
-requirement to `tensorflow` to support CPU alone.  All other (python) dependencies
-can be satisfied from the root of the project by `pip install -r requirements.txt`.  
+This project requires the GPU version of Tensorflow 1.2.1 along with the CUDA and cuDNN libraries, python 2.7, as well as the following libraries:
 
-You will need the CNN model in order for the project to run. You will need to create
-a `/models` directory under the `/data_science` directory.  In this directory you
-will place the following model after downloading it:
+  * Flask
+  * attrdict
+  * eventlet
+  * python-socketio
+  * numpy
+  * Pillow
+  * scipy
+  * keras
+  * h5py
+  * requests
 
-```
-https://drive.google.com/open?id=0B1TNQWukG_RDQ2JXUGdYQTlsSzA
-```
+These modules can be installed using: `pip install -r requirements.txt` from the root of the project.  
 
-Next go into the `/ros` directory and run `catkin_make` to build the ROS project.  Be 
-sure to source the project by running `. devel/setup.sh`.  At this point, if your 
-environment is set up properly, you should be able to launch ROS with 
-`roslaunch launch/styx.launch`.
+You will need to download our model in order to detect traffic lights. You can download the model by navigating to `self-driving-car-capstone/data_science/models` and running `python get_model.py`.
+Alternatively, you can download the model manually [here](https://drive.google.com/open?id=0B1TNQWukG_RDQ2JXUGdYQTlsSzA).
 
+Next go into the `/ros` directory and run `catkin_make` to build the ROS project. Be sure to source the project by running `. devel/setup.sh`.  At this point, if your environment is set up properly, you should be able to launch ROS with `roslaunch launch/styx.launch`.
