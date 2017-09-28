@@ -292,7 +292,7 @@ class TLDetector(object):
         """
         light = None
         light_positions = self.config['stop_line_positions']
-        max_visible_dist = 50.0 # need to find optimal value
+        max_visible_dist = 80.0
         min_dist = float('inf')
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose, self.waypoints.waypoints)
