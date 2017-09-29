@@ -4,7 +4,7 @@ This is the `SDC Fun` team repo for the capstone project of Udacity's Self-Drivi
 
  * James Barfield (jamesbarfield87@gmail.com)
  * Nick Condo(nicholas.condo@gmail.com)
- * Jim Duan (jd@vehicular.ai)
+ * Jim Duan (jim.duan@gmail.com)
  * Nimish Sanghi (nimish.sanghi@gmail.com)
  * Colin Shaw (colin.shaw@aya.yale.edu)
 
