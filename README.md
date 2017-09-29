@@ -32,3 +32,5 @@ You will need to download our model in order to detect traffic lights. You can d
 Alternatively, you can download the model manually [here](https://drive.google.com/open?id=0B1TNQWukG_RDQ2JXUGdYQTlsSzA).
 
 Next go into the `/ros` directory and run `catkin_make` to build the ROS project. Be sure to source the project by running `. devel/setup.sh`.  At this point, if your environment is set up properly, you should be able to launch ROS with `roslaunch launch/styx.launch`.
+
+Further information about our implementation can be found [here](docs/ProjectSummary.pdf).
