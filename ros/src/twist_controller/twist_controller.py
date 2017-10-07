@@ -6,11 +6,12 @@ from   lowpass        import LowPassFilter
 from   std_msgs.msg   import Float32
 
 
-GAS_DENSITY    = 2.858
-THROTTLE_MAX   = 0.8
-THROTTLE_CONST = 1.0
-BRAKE_MAX      = 0.8
-BRAKE_CONST    = 0.5
+GAS_DENSITY    =  2.858
+THROTTLE_MAX   =  0.8
+THROTTLE_CONST =  1.0
+BRAKE_MAX      =  0.7
+BRAKE_CONST    =  0.3
+BRAKE_SKIP     = -0.8
 
 
 class Controller(object):
@@ -49,8 +50,12 @@ class Controller(object):
         delta_t        = time - self.last_time
         self.last_time = time
 
+        throttle = 0.0
+        brake    = 0.0
+        steering = 0.0
+
         if not all((twist_cmd, current_velocity)):
-            return 0.0, 0.0, 0.0
+            return throttle, brake, steering
 
         desired_linear_velocity  = twist_cmd.twist.linear.x
         desired_angular_velocity = twist_cmd.twist.angular.z
@@ -65,18 +70,20 @@ class Controller(object):
             velocity_error = desired_linear_velocity - current_linear_velocity
             control        = self.pid_control.update(velocity_error, delta_t)
 
-            throttle = 0.0
-            brake    = 0.0
-
             if control >= 0.0:
                 throttle = self.soft_scale(control, THROTTLE_MAX, THROTTLE_CONST)
+                brake    = 0.0
+            elif control >= BRAKE_SKIP:
+                throttle = 0.0
+                brake    = 0.0
             else:
-                brake = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST)
+                throttle = 0.0
+                brake    = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST) + self.brake_deadband
 
             #rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
             #rospy.logwarn('Control:  {: 04.2f}'.format(control))
             #rospy.logwarn('Throttle: {: 04.2f}'.format(throttle))
-            #rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
+            rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
             #rospy.logwarn('Speed:    {: 04.2f}'.format(current_linear_velocity))
             #rospy.logwarn('')
 
@@ -88,7 +95,7 @@ class Controller(object):
 
         else:
             self.pid_control.reset()
-            return 0.0, 0.0, 0.0
+            return throttle, brake, steering
 
 
     def soft_scale(self, value, scale, stretch):
