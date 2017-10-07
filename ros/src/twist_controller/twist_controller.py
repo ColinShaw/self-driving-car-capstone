@@ -7,12 +7,14 @@ from   std_msgs.msg   import Float32
 
 
 GAS_DENSITY         =  2.858
-THROTTLE_MAX        =  0.6
+THROTTLE_MAX        =  0.75
 THROTTLE_CONST      =  0.6
 MAX_THROTTLE_CHANGE =  0.005
 BRAKE_MAX           =  0.6
 BRAKE_CONST         =  0.3
 BRAKE_SKIP          = -1.1
+BRAKE_TAU           =  0.5
+MIN_BRAKING         =  100.0
 RESET_SPEED         =  0.5
 
 
@@ -21,7 +23,7 @@ class Controller(object):
     def __init__(self):
         self.vehicle_mass    = rospy.get_param('~vehicle_mass')
         self.fuel_capacity   = rospy.get_param('~fuel_capacity')
-        self.brake_deadband  = rospy.get_param('~brake_deadband')
+        #self.brake_deadband  = rospy.get_param('~brake_deadband')
         self.decel_limit     = rospy.get_param('~decel_limit')
         self.accel_limit     = rospy.get_param('~accel_limit')
         self.wheel_radius    = rospy.get_param('~wheel_radius')
@@ -36,6 +38,7 @@ class Controller(object):
         self.last_time     = None
         self.last_throttle = 0.0
         self.pid_control   = PID(5.0, 0.05, 0.0)
+        self.brake_lpf     = LowPassFilter(BRAKE_TAU, 0.02)
         self.yaw_control   = YawController(wheel_base      = self.wheel_base,
                                            steer_ratio     = self.steer_ratio,
                                            min_speed       = 0.0,
@@ -86,7 +89,11 @@ class Controller(object):
             else:
                 throttle           = 0.0
                 self.last_throttle = 0.0
-                brake              = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST) + self.brake_deadband
+                brake              = self.soft_scale(-control, self.max_brake_torque, BRAKE_CONST) 
+
+            brake = self.brake_lpf.filter(brake)
+            if brake < MIN_BRAKING:
+                brake = 0.0
 
             #rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
             #rospy.logwarn('Control:  {: 04.2f}'.format(control))
