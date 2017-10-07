@@ -7,11 +7,11 @@ from   std_msgs.msg   import Float32
 
 
 GAS_DENSITY    =  2.858
-THROTTLE_MAX   =  0.8
-THROTTLE_CONST =  1.0
-BRAKE_MAX      =  0.7
+THROTTLE_MAX   =  0.6
+THROTTLE_CONST =  0.6
+BRAKE_MAX      =  0.6
 BRAKE_CONST    =  0.3
-BRAKE_SKIP     = -0.8
+BRAKE_SKIP     = -1.1
 
 
 class Controller(object):
