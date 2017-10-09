@@ -98,7 +98,7 @@ class Controller(object):
             #rospy.logwarn('Error:    {: 04.2f}'.format(velocity_error))
             #rospy.logwarn('Control:  {: 04.2f}'.format(control))
             #rospy.logwarn('Throttle: {: 04.2f}'.format(throttle))
-            rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
+            #rospy.logwarn('Brake:    {: 06.2f}'.format(brake))
             #rospy.logwarn('Speed:    {: 04.2f}'.format(current_linear_velocity))
             #rospy.logwarn('')
 
