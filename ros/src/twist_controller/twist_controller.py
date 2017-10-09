@@ -23,7 +23,6 @@ class Controller(object):
     def __init__(self):
         self.vehicle_mass    = rospy.get_param('~vehicle_mass')
         self.fuel_capacity   = rospy.get_param('~fuel_capacity')
-        #self.brake_deadband  = rospy.get_param('~brake_deadband')
         self.decel_limit     = rospy.get_param('~decel_limit')
         self.accel_limit     = rospy.get_param('~accel_limit')
         self.wheel_radius    = rospy.get_param('~wheel_radius')
