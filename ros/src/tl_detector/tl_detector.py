@@ -117,11 +117,11 @@ class TLDetector(object):
         image_width = self.config['camera_info']['image_width']
         image_height = self.config['camera_info']['image_height']
 
-        # get principal point (center of image)
+        # Get principal point (center of image)
         cx = image_width / 2
         cy = image_height / 2
 
-        # get transform between pose of camera and world frame
+        # Get transform between pose of camera and world frame
         trans = None
         rot = None
         try:
@@ -134,24 +134,24 @@ class TLDetector(object):
 
         # Use tranform and rotation to calculate 2D position of light in image
 
-        # create an numpy array containing the 3D world point
+        # Create numpy array containing the 3D world point
         object_point = np.array([[point_in_world.x, point_in_world.y, point_in_world.z]])
 
-        # convert the quaternion returned from lookupTransform into euler rotation
+        # Convert the quaternion returned from lookupTransform into euler rotation
         (roll,pitch,yaw) = tf.transformations.euler_from_quaternion(rot)
         rvec = np.array([roll,pitch,yaw])
         tvec = np.array(trans)
 
-        # create the camera matrix from the focal lengths and principal point
+        # Create the camera matrix from the focal lengths and principal point
         camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
 
-        # distortion coefficients - currently not available but per slack will be published soon
+        # Distortion coefficients - currently not available but per slack will be published soon
         dist_coeffs = None
 
-        # use OpenCv projectPoints to find the corresponding point in image from 3D world point
+        # Use OpenCV projectPoints to find the corresponding point in image from 3D world point
         img_point, _ = cv2.projectPoints(object_point, rvec, tvec, camera_matrix, dist_coeffs)
 
-        # cast to int to get a pixel value
+        # Cast to int to get a pixel value
         pixels = np.int32(img_point).reshape(-1, 2)
         x = pixels[0][0]
         y = pixels[0][1]
